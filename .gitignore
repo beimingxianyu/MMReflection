@@ -1,0 +1,50 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# customized
+/build
+/out
+*.srctrlbm
+*.srctrldb
+*.srctrlprj
+/.vs
+/CMakePresets.json
+/Folder.DotSettings.user
+/build_test
+/TODO.md
+/CMakeSettings.json
+/cmake-build-*/
+/.idea
+/.vscode
+/source_trail/
+/.cache

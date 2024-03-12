@@ -1,0 +1,5 @@
+if (MM_REFLECTION_ENABLE_TEST)
+    if (NOT TARGET gtest_main)
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/gtest")
+    endif ()
+endif ()
