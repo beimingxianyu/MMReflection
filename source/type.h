@@ -279,8 +279,6 @@ class TypeWrapper final : public TypeWrapperBase {
     return std::is_move_assignable_v<TypeName>;
   }
 
-  // TODO Add some instantiation.(int，float，double，std::string,vec3,
-  // vec4,mat3,mat4,etc.)
   /**
    * \brief Determine whether \ref OtherType can be converted to \ref TypeName.
    * \tparam OtherType Other types that determine whether they can be converted
