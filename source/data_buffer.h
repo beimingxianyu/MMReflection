@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstring>
+#include <cstdint>
 
-#include "variable.h"
 
 namespace MM {
 namespace Reflection {

@@ -1,8 +1,11 @@
 #pragma once
 
-#include <unordered_map>
+#include <variable.h>
+
 #include <cstdint>
+#include <functional>
 #include <string>
+#include <unordered_map>
 
 namespace MM{
 namespace Reflection {
@@ -10,8 +13,12 @@ const std::string& GetEmptyString();
 
 class Meta;
 class Type;
+class Variable;
+class DataBuffer;
 
 using TypeHashCode = std::uint64_t;
+using SerializeFunctionType = std::function<DataBuffer&(DataBuffer&, Variable&)>;
+using DeSerializeFunctionType = std::function<Variable&(DataBuffer&)>;
 
 struct TypeID {
   TypeHashCode common_type_hash_code_{0};

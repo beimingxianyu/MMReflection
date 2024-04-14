@@ -809,10 +809,6 @@ namespace MM
             template <typename VariableType>
             static Variable CreateVariable(VariableType&& other, bool is_refrence = false)
             {
-                if constexpr (std::is_same_v<VariableType, void>)
-                {
-                    return Variable::CreateVoidVariable();
-                }
                 if (is_refrence || std::is_lvalue_reference_v<VariableType>)
                 {
                     return Variable{std::make_unique<VariableRefrenceWrapper<VariableType>>(other)};
@@ -826,6 +822,38 @@ namespace MM
 
             template <typename VariableType, typename... Args>
             static Variable EmplaceVariable(Args&&... args)
+            {
+                return Variable{
+                    std::make_unique<VariableWrapper<std::remove_reference_t<VariableType>>>(
+                        std::forward<Args>(args)...)
+                };
+            }
+
+            /**
+             * \brief Create a \ref MM::Reflection::Variable from an rvalue.
+             * \tparam VariableType VariableType The type of rvalue.
+             * \param other One object.
+             * \param is_refrence Is true, create refrence variable, otherwise create common variable.
+             * \remark The new \ref MM::Reflection::Variable holds a value to other.
+             */
+            template <typename VariableType>
+            static Variable CreateVariablePlacement(void* address, VariableType&& other, bool is_refrence = false)
+            {
+                if (is_refrence || std::is_lvalue_reference_v<VariableType>)
+                {
+                    VariableRefrenceWrapper<VariableType>* wrapper = new VariableRefrenceWrapper<VariableType>(other);
+                    auto deleter = [](VariableRefrenceWrapper<VariableType>* value) { value->~VariableRefrenceWrapper(); };
+                    return Variable{std::unique_ptr<VariableRefrenceWrapper<VariableType>, decltype(deleter)>(wrapper, deleter)};
+                }
+
+                return Variable{
+                    std::make_unique<VariableWrapper<std::remove_reference_t<VariableType>>>(
+                        std::forward<VariableType>(other))
+                };
+            }
+
+            template <typename VariableType, typename... Args>
+            static Variable EmplaceVariablePlacement(void* address, Args&&... args)
             {
                 return Variable{
                     std::make_unique<VariableWrapper<std::remove_reference_t<VariableType>>>(
