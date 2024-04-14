@@ -1,6 +1,5 @@
 #include "data_buffer.h"
 
-
 MM::Reflection::DataBuffer::~DataBuffer() { Release(); }
 
 MM::Reflection::DataBuffer::DataBuffer(const std::uint64_t init_size)

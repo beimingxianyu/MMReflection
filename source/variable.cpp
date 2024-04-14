@@ -63,7 +63,7 @@ MM::Reflection::Variable::Variable(
 MM::Reflection::Variable::operator bool() const { return IsValid();}
 
 bool MM::Reflection::Variable::IsValid() const {
-  return variable_wrapper_ != nullptr && variable_wrapper_->IsValid();
+  return variable_wrapper_ != nullptr;
 }
 
 const void* MM::Reflection::Variable::GetValue() const {
@@ -78,13 +78,6 @@ void* MM::Reflection::Variable::GetValue() {
     return nullptr;
   }
   return variable_wrapper_->GetValue();
-}
-
-bool MM::Reflection::Variable::SetValue(const void* other) {
-  if (!IsValid()) {
-    return false;
-  }
-  return variable_wrapper_->SetValue(other);
 }
 
 bool MM::Reflection::Variable::CopyValue(const void* other) {
@@ -292,7 +285,7 @@ MM::Reflection::Variable MM::Reflection::Variable::Invoke(
 }
 
 void* MM::Reflection::Variable::ReleaseOwnership() {
-  return variable_wrapper_->ReleaseOwnership();
+  return variable_wrapper_.release();
 }
 
 void MM::Reflection::Variable::Destroy() {
@@ -304,8 +297,6 @@ bool MM::Reflection::VariableWrapperBase::IsVoid() const { return false; }
 bool MM::Reflection::VariableWrapperBase::IsRefrenceVariable() const {
   return false;
 }
-
-bool MM::Reflection::VariableWrapperBase::IsValid() const { return false; }
 
 bool MM::Reflection::VariableWrapperBase::IsPropertyVariable() const {
   return false;
@@ -326,10 +317,6 @@ const void* MM::Reflection::VariableWrapperBase::GetValue() const {
 }
 
 void* MM::Reflection::VariableWrapperBase::GetValue() { return nullptr; }
-
-bool MM::Reflection::VariableWrapperBase::SetValue(const void*) {
-  return false;
-}
 
 bool MM::Reflection::VariableWrapperBase::CopyValue(const void*) {
   return false;
@@ -355,20 +342,18 @@ const MM::Reflection::Meta* MM::Reflection::VariableWrapperBase::GetMeta()
   return nullptr;
 }
 
-void* MM::Reflection::VariableWrapperBase::ReleaseOwnership() {return nullptr;}
-
-bool MM::Reflection::VoidVariable::IsValid() const { return true; }
-
 bool MM::Reflection::VoidVariable::IsVoid() const { return true; }
 
 std::unique_ptr<MM::Reflection::VariableWrapperBase>
 MM::Reflection::VoidVariable::CopyToBasePointer() const {
   return std::make_unique<VoidVariable>();
 }
+
 std::unique_ptr<MM::Reflection::VariableWrapperBase>
 MM::Reflection::VoidVariable::MoveToBasePointer() {
   return std::make_unique<VoidVariable>();
 }
+
 const MM::Reflection::Type* MM::Reflection::VoidVariable::GetType() const {
   const MM::Reflection::Type& Result = MM::Reflection::Type::CreateType<void>();
   return &Result;
