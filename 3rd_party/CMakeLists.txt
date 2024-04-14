@@ -1,5 +1,6 @@
 if (MM_REFLECTION_ENABLE_TEST)
     if (NOT TARGET gtest_main)
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
         add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/gtest")
     endif ()
 endif ()
