@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>
 #include <string>
 #include <unordered_map>
 
@@ -13,10 +12,10 @@ class Meta;
 class Type;
 class Variable;
 class DataBuffer;
+class Serializer;
 
 using TypeHashCode = std::uint64_t;
-using SerializeFunctionType = std::function<DataBuffer&(DataBuffer&, Variable&)>;
-using DeSerializeFunctionType = std::function<Variable&(DataBuffer&)>;
+
 
 struct TypeID {
   TypeHashCode common_type_hash_code_{0};
@@ -31,12 +30,15 @@ struct TypeID {
 std::unordered_map<std::string, const TypeHashCode>&
 GetNameToTypeHashDatabase();
 
+std::unordered_map<std::string, Serializer*>& GetSerializer();
+
 /**
  * \brief The Database of all registered metadata.
  */
 std::unordered_map<TypeHashCode, Meta*>& GetMetaDatabase();
 
 std::unordered_map<TypeID, const Type*>& GetTypeDatabase();
+
 }  // namespace Reflection
 }
 

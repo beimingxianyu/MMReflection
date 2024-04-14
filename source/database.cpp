@@ -10,6 +10,7 @@ const std::string& MM::Reflection::GetEmptyString() {
   return empty_string;
 }
 
+
 std::unordered_map<std::size_t, MM::Reflection::Meta*>&
 MM::Reflection::GetMetaDatabase() {
   static std::unordered_map<std::size_t, Meta*> g_meta_database;
@@ -57,6 +58,13 @@ MM::Reflection::GetNameToTypeHashDatabase() {
       name_to_type_hash_data_base{};
 
   return name_to_type_hash_data_base;
+}
+
+std::unordered_map<std::string, MM::Reflection::Serializer*>&
+MM::Reflection::GetSerializer() {
+  static std::unordered_map<std::string, Serializer*> g_serializer_database;
+
+  return g_serializer_database;
 }
 
 MM::Reflection::TypeHashCode std::hash<MM::Reflection::TypeID>::operator()(
