@@ -13,7 +13,18 @@ MM::Reflection::Variable::Variable(
     return;
   }
 
-  variable_wrapper_ = other.variable_wrapper_->CopyToBasePointer();
+  const VariableWrapperBase* wrapper_base_ptr = other.GetWrapperBasePtr();
+  assert(wrapper_base_ptr != nullptr);
+  if (other.variable_type_ == VariableType::SMALL_OBJECT) {
+    variable_type_ = VariableType::SMALL_OBJECT;
+    // GetWrapperBasePtr depend on variable_type_
+    VariableWrapperBase* new_ptr = wrapper_base_ptr->CopyToBasePointer(GetWrapperBasePtr());
+  } else {
+  VariableWrapperBase* new_ptr = wrapper_base_ptr->CopyToBasePointer(nullptr);
+
+  wrapper_.common_wrapper_ = new_ptr;
+  variable_type_ = VariableType::COMMON_OBJECT;
+  }
 }
 
 MM::Reflection::Variable::Variable(
@@ -22,7 +33,22 @@ MM::Reflection::Variable::Variable(
     return;
   }
 
-  variable_wrapper_ = other.variable_wrapper_->MoveToBasePointer();
+  VariableWrapperBase* wrapper_base_ptr = other.GetWrapperBasePtr();
+  assert(wrapper_base_ptr != nullptr);
+  if (other.variable_type_ == VariableType::SMALL_OBJECT) {
+    variable_type_ = VariableType::SMALL_OBJECT;
+    // GetWrapperBasePtr depend on variable_type_
+    if (other.IsRefrenceVariable()) {
+      VariableWrapperBase* new_ptr = wrapper_base_ptr->CopyToBasePointer(GetWrapperBasePtr());
+    } else {
+      VariableWrapperBase* new_ptr = wrapper_base_ptr->MoveToBasePointer(GetWrapperBasePtr());
+    }
+  } else {
+    VariableWrapperBase* new_ptr = wrapper_base_ptr->MoveToBasePointer(nullptr);
+
+    wrapper_.common_wrapper_ = new_ptr;
+    variable_type_ = VariableType::COMMON_OBJECT;
+  }
 }
 
 MM::Reflection::Variable& MM::Reflection::Variable::operator=(
@@ -36,7 +62,9 @@ MM::Reflection::Variable& MM::Reflection::Variable::operator=(
   if (GetType()->GetTypeHashCode() != other.GetType()->GetTypeHashCode()) {
     return *this;
   }
-  variable_wrapper_->CopyValue(other.variable_wrapper_->GetValue());
+
+  CopyValue(other.GetValue());
+
   return *this;
 }
 
@@ -52,46 +80,71 @@ MM::Reflection::Variable& MM::Reflection::Variable::operator=(
       other.GetType()->GetTypeHashCode()) {
     return *this;
   }
-  variable_wrapper_->MoveValue(other.variable_wrapper_->GetValue());
+
+  MoveValue(other.GetValue());
+
   return *this;
 }
 
 MM::Reflection::Variable::Variable(
-    std::unique_ptr<VariableWrapperBase>&& variable_wrapper)
-    : variable_wrapper_(std::move(variable_wrapper)) {}
+    std::unique_ptr<VariableWrapperBase>&& variable_wrapper,
+    const bool placement /*= false*/)
+    : wrapper_(), variable_type_(VariableType::COMMON_OBJECT) {
+  wrapper_.common_wrapper_ = variable_wrapper.release();
+  if (placement) {
+    variable_type_ = VariableType::PLACMENT_OBJECT;
+  }
+}
 
 MM::Reflection::Variable::operator bool() const { return IsValid();}
 
 bool MM::Reflection::Variable::IsValid() const {
-  return variable_wrapper_ != nullptr;
+  return variable_type_ != VariableType::INVALID;
 }
 
 const void* MM::Reflection::Variable::GetValue() const {
   if (!IsValid()) {
     return nullptr;
   }
-  return variable_wrapper_->GetValue();
+
+  const VariableWrapperBase* wrapper_base_ptr = GetWrapperBasePtr();
+  assert(wrapper_base_ptr != nullptr);
+  return wrapper_base_ptr->GetValue();
 }
 
 void* MM::Reflection::Variable::GetValue() {
   if (!IsValid()) {
     return nullptr;
   }
-  return variable_wrapper_->GetValue();
+
+  VariableWrapperBase* wrapper_base_ptr = GetWrapperBasePtr();
+  assert(wrapper_base_ptr != nullptr);
+  return wrapper_base_ptr->GetValue();
 }
 
 bool MM::Reflection::Variable::CopyValue(const void* other) {
   if (!IsValid()) {
     return false;
   }
-  return variable_wrapper_->CopyValue(other);
+
+  VariableWrapperBase* wrapper_base_ptr = GetWrapperBasePtr();
+  if (wrapper_base_ptr == nullptr) {
+    return false;
+  }
+
+  return wrapper_base_ptr->CopyValue(other);
 }
 
 bool MM::Reflection::Variable::MoveValue(void* other) {
   if (!IsValid()) {
     return false;
   }
-  return variable_wrapper_->MoveValue(other);
+  VariableWrapperBase* wrapper_base_ptr = GetWrapperBasePtr();
+  if (wrapper_base_ptr == nullptr) {
+    return false;
+  }
+
+  return wrapper_base_ptr->MoveValue(other);
 }
 
 const MM::Reflection::Type* MM::Reflection::Variable::GetType() const {
@@ -99,7 +152,10 @@ const MM::Reflection::Type* MM::Reflection::Variable::GetType() const {
   if (!IsValid()) {
     return &EmptyType;
   }
-  return variable_wrapper_->GetType();
+
+  const VariableWrapperBase* wrapper_base_ptr = GetWrapperBasePtr();
+  assert(wrapper_base_ptr != nullptr);
+  return wrapper_base_ptr->GetType();
 }
 
 const MM::Reflection::Meta* MM::Reflection::Variable::
@@ -107,7 +163,9 @@ GetMeta() const {
   if (!IsValid()) {
     return nullptr;
   }
-  return variable_wrapper_->GetMeta();
+  const VariableWrapperBase* wrapper_base_ptr = GetWrapperBasePtr();
+  assert(wrapper_base_ptr != nullptr);
+  return wrapper_base_ptr->GetMeta();
 }
 
 MM::Reflection::Variable MM::Reflection::Variable::GetPropertyVariable(
@@ -285,11 +343,39 @@ MM::Reflection::Variable MM::Reflection::Variable::Invoke(
 }
 
 void* MM::Reflection::Variable::ReleaseOwnership() {
-  return variable_wrapper_.release();
+  void* result = nullptr;
+  switch (variable_type_) {
+    case VariableType::COMMON_OBJECT:
+    case VariableType::PLACMENT_OBJECT:
+      result = GetWrapperBasePtr();
+      wrapper_.common_wrapper_ = nullptr;
+      variable_type_ = VariableType::INVALID;
+      return result;
+    default:
+      return nullptr;
+  }
 }
 
 void MM::Reflection::Variable::Destroy() {
-  variable_wrapper_.reset();
+  switch (variable_type_) {
+    case VariableType::SMALL_OBJECT:
+      wrapper_.small_wrapper_.GetWrpperBasePtr()->Destroy();
+      wrapper_.small_wrapper_ = SmallObject{};
+      variable_type_ = VariableType::INVALID;
+      break;
+    case VariableType::COMMON_OBJECT:
+      delete wrapper_.common_wrapper_;
+      wrapper_.common_wrapper_ = nullptr;
+      variable_type_ = VariableType::INVALID;
+      break;
+    case VariableType::PLACMENT_OBJECT:
+      wrapper_.placement_wrapper_->Destroy();
+      wrapper_.placement_wrapper_ = nullptr;
+      variable_type_ = VariableType::INVALID;
+      break;
+    default:
+      break;
+  }
 }
 
 bool MM::Reflection::VariableWrapperBase::IsVoid() const { return false; }
@@ -298,17 +384,23 @@ bool MM::Reflection::VariableWrapperBase::IsRefrenceVariable() const {
   return false;
 }
 
+void MM::Reflection::VariableWrapperBase::Destroy() {}
+
+std::uint64_t MM::Reflection::VariableWrapperBase::GetWrapperSize() const {
+  return 0;
+}
+
 bool MM::Reflection::VariableWrapperBase::IsPropertyVariable() const {
   return false;
 }
 
-std::unique_ptr<MM::Reflection::VariableWrapperBase>
-MM::Reflection::VariableWrapperBase::CopyToBasePointer() const {
+MM::Reflection::VariableWrapperBase*
+MM::Reflection::VariableWrapperBase::CopyToBasePointer(void* placement_address) const {
   return nullptr;
 }
 
-std::unique_ptr<MM::Reflection::VariableWrapperBase>
-MM::Reflection::VariableWrapperBase::MoveToBasePointer() {
+MM::Reflection::VariableWrapperBase*
+MM::Reflection::VariableWrapperBase::MoveToBasePointer(void* placement_address) {
   return nullptr;
 }
 
@@ -342,16 +434,28 @@ const MM::Reflection::Meta* MM::Reflection::VariableWrapperBase::GetMeta()
   return nullptr;
 }
 
-bool MM::Reflection::VoidVariable::IsVoid() const { return true; }
-
-std::unique_ptr<MM::Reflection::VariableWrapperBase>
-MM::Reflection::VoidVariable::CopyToBasePointer() const {
-  return std::make_unique<VoidVariable>();
+std::uint64_t MM::Reflection::VoidVariable::GetWrapperSize() const {
+  return sizeof(VoidVariable);
 }
 
-std::unique_ptr<MM::Reflection::VariableWrapperBase>
-MM::Reflection::VoidVariable::MoveToBasePointer() {
-  return std::make_unique<VoidVariable>();
+bool MM::Reflection::VoidVariable::IsVoid() const { return true; }
+
+MM::Reflection::VariableWrapperBase*
+MM::Reflection::VoidVariable::CopyToBasePointer(void* placement_addresss) const {
+  if (placement_addresss != nullptr) {
+    return new (placement_addresss)VoidVariable{};
+  } else {
+    return new VoidVariable{};
+  }
+}
+
+MM::Reflection::VariableWrapperBase*
+MM::Reflection::VoidVariable::MoveToBasePointer(void* placement_addresss) {
+  if (placement_addresss != nullptr) {
+    return new (placement_addresss)VoidVariable{};
+  } else {
+    return new VoidVariable{};
+  }
 }
 
 const MM::Reflection::Type* MM::Reflection::VoidVariable::GetType() const {
@@ -367,7 +471,10 @@ bool MM::Reflection::Variable::IsVoid() const {
       return false;
   }
 
-  return variable_wrapper_->IsVoid();
+  const VariableWrapperBase* wrapper_base_ptr = GetWrapperBasePtr();
+  assert(wrapper_base_ptr != nullptr);
+
+  return wrapper_base_ptr->IsVoid();
 }
 
 bool MM::Reflection::Variable::IsRefrenceVariable() const {
@@ -375,7 +482,10 @@ bool MM::Reflection::Variable::IsRefrenceVariable() const {
     return false;
   }
 
-  return variable_wrapper_->IsRefrenceVariable();
+  const VariableWrapperBase* wrapper_base_ptr = GetWrapperBasePtr();
+  assert(wrapper_base_ptr != nullptr);
+
+  return wrapper_base_ptr->IsRefrenceVariable();
 }
 
 bool MM::Reflection::Variable::IsPropertyVariable() const {
@@ -383,9 +493,17 @@ bool MM::Reflection::Variable::IsPropertyVariable() const {
     return false;
   }
 
-  return variable_wrapper_->IsPropertyVariable();
+  const VariableWrapperBase* wrapper_base_ptr = GetWrapperBasePtr();
+  assert(wrapper_base_ptr != nullptr);
+
+  return wrapper_base_ptr->IsPropertyVariable();
 }
 
 MM::Reflection::Variable MM::Reflection::Variable::CreateVoidVariable() {
-  return Variable{std::make_unique<VoidVariable>(VoidVariable{})};
+  static_assert(sizeof(VoidVariable) < sizeof(SmallObject));
+  Variable variable{};
+  variable.variable_type_ = VariableType::SMALL_OBJECT;
+  void* small_object_address = &variable.wrapper_.small_wrapper_;
+  new (small_object_address) VoidVariable{};
+  return variable;
 }

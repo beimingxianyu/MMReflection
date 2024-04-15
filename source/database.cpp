@@ -61,7 +61,7 @@ MM::Reflection::GetNameToTypeHashDatabase() {
 }
 
 std::unordered_map<std::string, MM::Reflection::Serializer*>&
-MM::Reflection::GetSerializer() {
+MM::Reflection::GetSerializerDatabase() {
   static std::unordered_map<std::string, Serializer*> g_serializer_database;
 
   return g_serializer_database;

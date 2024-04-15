@@ -331,20 +331,20 @@ class TypeWrapper final : public TypeWrapperBase {
     std::string result{GetOriginalTypeName()};
     if constexpr (std::is_pointer_v<TypeName>) {
       if constexpr (std::is_const_v<std::remove_pointer_t<TypeName>>) {
-        result += "const ";
+        result += " const ";
       }
       result += "*";
       if constexpr (std::is_const_v<TypeName>) {
-        result += " const";
+        result += " const ";
       }
     } else if constexpr (std::is_array_v<TypeName>) {
       if (std::is_const_v<TypeName>) {
-        result += "const ";
+        result += " const ";
       }
       result += "[]";
     } else {
       if constexpr (std::is_const_v<std::remove_reference_t<TypeName>>) {
-        result += "const ";
+        result += " const ";
       }
       if constexpr (std::is_lvalue_reference_v<TypeName>) {
         result += "&";

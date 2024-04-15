@@ -27,6 +27,10 @@ namespace MM
             VariableWrapperBase& operator=(VariableWrapperBase&&) = default;
 
         public:
+            virtual void Destroy();
+
+            virtual std::uint64_t GetWrapperSize() const;
+
             virtual bool IsPropertyVariable() const;
 
             virtual bool IsVoid() const;
@@ -37,13 +41,13 @@ namespace MM
              * \brief Get a base pointer of copy.
              * \return The base pointer of copy.
              */
-            virtual std::unique_ptr<VariableWrapperBase> CopyToBasePointer() const;
+            virtual VariableWrapperBase* CopyToBasePointer(void* placement_address) const;
 
             /**
              * \brief Get a base pointer of move.
              * \return The base pointer of move.
              */
-            virtual std::unique_ptr<VariableWrapperBase> MoveToBasePointer();
+            virtual VariableWrapperBase* MoveToBasePointer(void* placement_address);
 
             /**
              * \brief Get the value of the object held by this object.
@@ -180,17 +184,28 @@ namespace MM
             }
 
         public:
+            void Destroy() override {
+              value_.~VariableType_();
+            }
+
+            std::uint64_t GetWrapperSize() const override {
+              return sizeof(VariableWrapper);
+            }
+
             bool IsPropertyVariable() const override
             {
                 return false;
             }
 
-            std::unique_ptr<VariableWrapperBase> CopyToBasePointer() const override
+            VariableWrapperBase* CopyToBasePointer(void* placement_address) const override
             {
                 if constexpr (std::is_copy_constructible_v<VariableType_>)
                 {
-                    return std::make_unique<VariableWrapperBase>(
-                        VariableWrapper<VariableType_>(value_));
+                  if (placement_address != nullptr) {
+                    return new (placement_address)VariableWrapper{value_};
+                  } else {
+                    return new VariableWrapper{value_};
+                  }
                 }
                 else
                 {
@@ -198,12 +213,15 @@ namespace MM
                 }
             }
 
-            std::unique_ptr<VariableWrapperBase> MoveToBasePointer() override
+            VariableWrapperBase* MoveToBasePointer(void* placement_address) override
             {
                 if constexpr (std::is_move_constructible_v<VariableType_>)
                 {
-                    return std::make_unique<VariableWrapperBase>(
-                        VariableWrapper<VariableType_>(std::move(value_)));
+                  if (placement_address != nullptr) {
+                    return new (placement_address)VariableWrapper{std::move(value_)};
+                  } else {
+                    return new VariableWrapper{std::move(value_)};
+                  }
                 }
                 else
                 {
@@ -365,6 +383,10 @@ namespace MM
             }
 
         public:
+            std::uint64_t GetWrapperSize() const override {
+              return sizeof(VariableRefrenceWrapper);
+            }
+
             bool IsPropertyVariable() const override
             {
                 return false;
@@ -375,30 +397,18 @@ namespace MM
                 return true;
             }
 
-            std::unique_ptr<VariableWrapperBase> CopyToBasePointer() const override
+            VariableWrapperBase* CopyToBasePointer(void* placement_address) const override
             {
-                if constexpr (std::is_copy_constructible_v<VariableType_>)
-                {
-                    return std::make_unique<VariableWrapperBase>(
-                        VariableWrapper<std::remove_reference_t<VariableType_>>(value_));
-                }
-                else
-                {
-                    return nullptr;
+                if (placement_address != nullptr) {
+                  return new (placement_address) VariableRefrenceWrapper<VariableType_>(value_);
+                } else {
+                  return new VariableRefrenceWrapper<VariableType_>(value_);
                 }
             }
 
-            std::unique_ptr<VariableWrapperBase> MoveToBasePointer() override
+            VariableWrapperBase* MoveToBasePointer(void* placement_address) override
             {
-                if constexpr (std::is_move_constructible_v<VariableType_>)
-                {
-                    return std::make_unique<VariableWrapperBase>(
-                        VariableWrapper<std::remove_reference_t<VariableType_>>(std::move(value_)));
-                }
-                else
-                {
-                    return nullptr;
-                }
+              return nullptr;
             }
 
             /**
@@ -582,19 +592,21 @@ namespace MM
             VoidVariable& operator=(VoidVariable&& other) noexcept = default;
 
         public:
+            std::uint64_t GetWrapperSize() const override;
+
             bool IsVoid() const override;
 
             /**
              * \brief Get a base pointer of copy.
              * \return The base pointer of copy.
              */
-            std::unique_ptr<VariableWrapperBase> CopyToBasePointer() const override;
+            VariableWrapperBase* CopyToBasePointer(void* placement_address) const override;
 
             /**
              * \brief Get a base pointer of move.
              * \return The base pointer of move.
              */
-            std::unique_ptr<VariableWrapperBase> MoveToBasePointer() override;
+            VariableWrapperBase* MoveToBasePointer(void* placement_address) override;
 
             /**
              * \brief Get the MM::Reflection::Type of the object held by this object.
@@ -692,7 +704,18 @@ namespace MM
             {
                 if (is_refrence || std::is_lvalue_reference_v<VariableType>)
                 {
-                    return Variable{std::make_unique<VariableRefrenceWrapper<VariableType>>(other)};
+                  Variable variable{};
+                  variable.variable_type_ = Variable::VariableType::SMALL_OBJECT;
+                  void* small_object_address = &variable.wrapper_.small_wrapper_;
+                  new (small_object_address)VariableRefrenceWrapper<VariableType>{other};
+                  return variable;
+                }
+                if constexpr (sizeof(VariableType) <= sizeof(SmallObject) - sizeof(void*)) {
+                  Variable variable{};
+                  variable.variable_type_ = Variable::VariableType::SMALL_OBJECT;
+                  void* small_object_address = &variable.wrapper_.small_wrapper_;
+                  new (small_object_address)VariableWrapper<std::remove_reference_t<VariableType>>{std::forward<VariableType>(other)};
+                  return variable;
                 }
 
                 return Variable{
@@ -704,6 +727,14 @@ namespace MM
             template <typename VariableType, typename... Args>
             static Variable EmplaceVariable(Args&&... args)
             {
+                if constexpr (sizeof(VariableType) <= sizeof(SmallObject) - sizeof(void*)) {
+                  Variable variable{};
+                  variable.variable_type_ = Variable::VariableType::SMALL_OBJECT;
+                  void* small_object_address = &variable.wrapper_.small_wrapper_;
+                  new (small_object_address)VariableWrapper<std::remove_reference_t<VariableType>>{std::forward<Args>(args)...};
+                  return variable;
+                }
+
                 return Variable{
                     std::make_unique<VariableWrapper<std::remove_reference_t<VariableType>>>(
                         std::forward<Args>(args)...)
@@ -722,42 +753,29 @@ namespace MM
             static Variable CreateVariablePlacement(void* address, VariableType&& other, bool is_refrence = false)
             {
               if (is_refrence || std::is_lvalue_reference_v<VariableType>) {
-                auto deleter =
-                    [](VariableRefrenceWrapper<VariableType>* value) {
-                      value->~VariableRefrenceWrapper();
-                    };
                 VariableRefrenceWrapper<VariableType>* wrapper =
                     new (address) VariableRefrenceWrapper<VariableType>(other);
                 return Variable{
-                    std::unique_ptr<VariableRefrenceWrapper<VariableType>,
-                                    decltype(deleter)>(wrapper, deleter)};
+                    std::unique_ptr<VariableRefrenceWrapper<VariableType>>(wrapper), true};
               }
 
-              auto deleter =
-                  [](VariableWrapper<std::remove_reference_t<VariableType>>*
-                         value) { value->~VariableRefrenceWrapper(); };
               VariableWrapper<std::remove_reference_t<VariableType>>* wrapper =
                   new (address)
                       VariableWrapper<std::remove_reference_t<VariableType>>(
                           std::forward<VariableType>(other));
               return Variable{std::unique_ptr<
-                  VariableWrapper<std::remove_reference_t<VariableType>>,
-                  decltype(deleter)>(wrapper, deleter)};
+                  VariableWrapper<std::remove_reference_t<VariableType>>>(wrapper), true};
             }
 
             template <typename VariableType, typename... Args>
             static Variable EmplaceVariablePlacement(void* address, Args&&... args)
             {
-              auto deleter =
-                  [](VariableWrapper<std::remove_reference_t<VariableType>>*
-                         value) { value->~VariableRefrenceWrapper(); };
               VariableWrapper<std::remove_reference_t<VariableType>>* wrapper =
                   new (address)
                       VariableWrapper<std::remove_reference_t<VariableType>>(
                           std::forward<Args>(args)...);
               return Variable{std::unique_ptr<
-                  VariableWrapper<std::remove_reference_t<VariableType>>,
-                  decltype(deleter)>(wrapper, deleter)};
+                  VariableWrapper<std::remove_reference_t<VariableType>>>(wrapper), true};
             }
 
             static Variable CreateVoidVariable();
@@ -804,8 +822,9 @@ namespace MM
             /**
              * \brief Construct an object from an std::unique_ptr<VariableWrapperBase>.
              * \param variable_wrapper std::unique_ptr<VariableWrapperBase> containing variable data.
+             * \param placement Indicates whether the passed in object is a placement new object.
              */
-            explicit Variable(std::unique_ptr<VariableWrapperBase>&& variable_wrapper);
+            explicit Variable(std::unique_ptr<VariableWrapperBase>&& variable_wrapper, bool placement = false);
 
         public:
             /**
@@ -988,7 +1007,7 @@ namespace MM
              * \param arg4 4th argument.
              * \param arg5 5th argument.
              * \param arg6 6th argument.
-             * \return \ref MM::Reflection::Variable containing the return value of this
+             * \return \ref MM::Refl::Variable containing the return value of this
              * function.
              * \remark If the number or type of incoming argument is different
              * from the argument required by the function held by this object or the target method not exist, the
@@ -1036,7 +1055,62 @@ namespace MM
             void Destroy();
 
         private:
-            std::unique_ptr<VariableWrapperBase> variable_wrapper_ = nullptr;
+          enum class VariableType {
+            INVALID,
+            SMALL_OBJECT,
+            PLACMENT_OBJECT,
+            COMMON_OBJECT
+          };
+
+         // The small object is an object of 8 bytes or less, plus a virtual
+         // function table pointer, resulting in a size of 16 bytes. To erase
+         // type information, use this structure instead.
+         struct SmallObject {
+            void* ptr1{nullptr};
+            void* ptr2{nullptr};
+
+            const VariableWrapperBase* GetWrpperBasePtr() const {
+              return reinterpret_cast<const VariableWrapperBase*>(this);
+            }
+
+            VariableWrapperBase* GetWrpperBasePtr() {
+              return reinterpret_cast<VariableWrapperBase*>(this);
+            }
+          };
+
+         const VariableWrapperBase* GetWrapperBasePtr() const {
+           switch (variable_type_) {
+             case VariableType::SMALL_OBJECT:
+               return wrapper_.small_wrapper_.GetWrpperBasePtr();
+             case VariableType::COMMON_OBJECT:
+               return wrapper_.common_wrapper_;
+             case VariableType::PLACMENT_OBJECT:
+               return wrapper_.placement_wrapper_;
+             default:
+               return nullptr;
+           }
+         }
+
+         VariableWrapperBase* GetWrapperBasePtr() {
+           switch (variable_type_) {
+             case VariableType::SMALL_OBJECT:
+               return wrapper_.small_wrapper_.GetWrpperBasePtr();
+             case VariableType::COMMON_OBJECT:
+               return wrapper_.common_wrapper_;
+             case VariableType::PLACMENT_OBJECT:
+               return wrapper_.placement_wrapper_;
+             default:
+               return nullptr;
+           }
+         }
+
+        private:
+            union Wrapper {
+              SmallObject small_wrapper_{};
+              VariableWrapperBase* common_wrapper_;
+              VariableWrapperBase* placement_wrapper_;
+            } wrapper_{};
+            VariableType variable_type_{VariableType::INVALID};
         };
     } // namespace Reflection
 } // namespace MM

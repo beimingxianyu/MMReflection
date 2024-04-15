@@ -30,7 +30,7 @@ struct TypeID {
 std::unordered_map<std::string, const TypeHashCode>&
 GetNameToTypeHashDatabase();
 
-std::unordered_map<std::string, Serializer*>& GetSerializer();
+std::unordered_map<std::string, Serializer*>& GetSerializerDatabase();
 
 /**
  * \brief The Database of all registered metadata.

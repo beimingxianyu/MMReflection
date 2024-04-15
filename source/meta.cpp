@@ -154,6 +154,24 @@ void MM::Reflection::Meta::RemoveProperty(const std::string& property_name) {
   properties_.erase(property_name);
 }
 
+bool MM::Reflection::Meta::SetSerializerName(
+    const std::string& serializer_name) {
+  const std::unordered_map<std::string, Serializer*>& data_base = GetSerializerDatabase();
+  const auto find_rseult = data_base.find(serializer_name);
+  if (find_rseult == nullptr) {
+    return false;
+  }
+  if (!find_rseult->second->Check(*this)) {
+    return false;
+  }
+
+  serializer_name_ = serializer_name;
+
+  return true;
+}
+
+void MM::Reflection::Meta::RemoveSerializerName() { serializer_name_.clear(); }
+
 MM::Reflection::Variable MM::Reflection::Meta::CreateInstance(
     const std::string& constructor_name) const {
   const Constructor* constructor = GetConstructor(constructor_name);

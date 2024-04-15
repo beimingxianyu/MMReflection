@@ -7,6 +7,7 @@
 #include "method.h"
 #include "property.h"
 #include "constructor.h"
+#include "serializer.h"
 
 namespace MM {
 namespace Reflection {
@@ -134,6 +135,10 @@ public:
  bool AddProperty(Property&& property);
 
  void RemoveProperty(const std::string& property_name);
+
+ bool SetSerializerName(const std::string& serializer_name);
+
+ void RemoveSerializerName();
 
  /**
   * \brief Create instance with 0 arguments.
@@ -284,6 +289,8 @@ private:
    * \brief Property map.
    */
   std::unordered_map<std::string, Property> properties_;
+
+  std::string serializer_name_{};
 };
 }
 }
