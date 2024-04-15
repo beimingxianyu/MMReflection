@@ -10,19 +10,32 @@ const std::string& MM::Reflection::GetEmptyString() {
   return empty_string;
 }
 
+template<typename T>
+struct DatabaseWrapper {
+  DatabaseWrapper() = default;
+  ~DatabaseWrapper() {
+    for (auto& element: database_) {
+      delete element.second;
+    }
+  }
+
+  T database_{};
+};
 
 std::unordered_map<std::size_t, MM::Reflection::Meta*>&
 MM::Reflection::GetMetaDatabase() {
-  static std::unordered_map<std::size_t, Meta*> g_meta_database;
+  // static std::unordered_map<std::size_t, Meta*> g_meta_database;
+  static DatabaseWrapper<std::unordered_map<std::size_t, Meta*>> g_meta_database;
 
-  return g_meta_database;
+  return g_meta_database.database_;
 }
 
 std::unordered_map<MM::Reflection::TypeID, const MM::Reflection::Type*>&
 MM::Reflection::GetTypeDatabase() {
-  static std::unordered_map<TypeID, const Type*> g_type_database;
+  // static std::unordered_map<TypeID, const Type*> g_type_database;
+  static DatabaseWrapper<std::unordered_map<TypeID, const Type*>> g_type_database;
 
-  return g_type_database;
+  return g_type_database.database_;
 }
 
 bool MM::Reflection::TypeID::operator==(const TypeID& other) const {
@@ -62,9 +75,9 @@ MM::Reflection::GetNameToTypeHashDatabase() {
 
 std::unordered_map<std::string, MM::Reflection::Serializer*>&
 MM::Reflection::GetSerializerDatabase() {
-  static std::unordered_map<std::string, Serializer*> g_serializer_database;
+  static DatabaseWrapper<std::unordered_map<std::string, Serializer*>> g_serializer_database;
 
-  return g_serializer_database;
+  return g_serializer_database.database_;
 }
 
 MM::Reflection::TypeHashCode std::hash<MM::Reflection::TypeID>::operator()(

@@ -99,6 +99,11 @@ public:
 
 private:
   void Register() {
+    // auto& name_to_type_database = GetNameToTypeHashDatabase();
+    // auto& meta_database = GetMetaDatabase();
+    // if (auto find_result = name_to_type_database.find(meta_.GetTypeName()); find_result != name_to_type_database.end()) {
+    //   assert(find_result->second == );
+    // }
     auto name_to_hash_emplace_result = GetNameToTypeHashDatabase().emplace(std::pair{meta_.GetTypeName(), meta_.GetType().GetTypeHashCode()});
     assert(name_to_hash_emplace_result.second);
     auto meta_data_emplace_result = GetMetaDatabase().emplace(std::pair{meta_.GetType().GetTypeHashCode(), new Meta{std::move(meta_)}});
