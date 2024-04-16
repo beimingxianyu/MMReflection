@@ -189,7 +189,7 @@ class PropertyWrapper
    */
   Variable GetPropertyVariable(Variable& class_variable) override {
     PropertyType_* property_ptr =reinterpret_cast<PropertyType_*>(static_cast<char*>(class_variable.GetValue()) + PropertyWrapperBase::GetPropertyOffset());
-    return Variable{std::make_unique<PropertyVariableWrapper<PropertyType_>>(*property_ptr)};
+    return Variable{new PropertyVariableWrapper<PropertyType_>(*property_ptr)};
   }
 
   /**
@@ -200,7 +200,7 @@ class PropertyWrapper
    */
   Variable GetPropertyVariable(const Variable& class_variable) const override {
     const PropertyType_* property_ptr =reinterpret_cast<const PropertyType_*>(static_cast<const char*>(class_variable.GetValue()) + PropertyWrapperBase::GetPropertyOffset());
-    return Variable{std::make_unique<PropertyVariableWrapper<const PropertyType_>>(*property_ptr)};
+    return Variable{new PropertyVariableWrapper<const PropertyType_>(*property_ptr)};
   }
 };
 
@@ -242,7 +242,7 @@ class StaticPropertyWrapper
    * in \ref class_variable.
    */
   Variable GetPropertyVariable(Variable&) override {
-    return Variable{std::make_unique<PropertyVariableWrapper<PropertyType_>>(*static_property_address_)};
+    return Variable{new PropertyVariableWrapper<PropertyType_>(*static_property_address_)};
   }
 
   /**
@@ -251,7 +251,7 @@ class StaticPropertyWrapper
    * in \ref class_variable.
    */
   Variable GetPropertyVariable(const Variable&) const override {
-    return Variable{std::make_unique<PropertyVariableWrapper<const PropertyType_>>(*static_property_address_)};
+    return Variable{new PropertyVariableWrapper<const PropertyType_>(*static_property_address_)};
   }
 
   private:

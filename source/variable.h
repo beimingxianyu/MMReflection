@@ -624,437 +624,448 @@ namespace MM
         };
 
 
-        class Variable
-        {
-            friend class VariableWrapperBase;
-            template <typename VariableType>
-            friend class VariableWrapper;
-            template <typename VariableType>
-            friend class VariableRefrenceWrapper;
-            template <typename PropertyType, typename ClassType>
-            friend class PropertyWrapper;
-            template <typename TargetType_, typename DestructorType_>
-            friend class DestructorWrapper;
+        class Variable {
+          friend class VariableWrapperBase;
+          template <typename VariableType>
+          friend class VariableWrapper;
+          template <typename VariableType>
+          friend class VariableRefrenceWrapper;
+          template <typename PropertyType, typename ClassType>
+          friend class PropertyWrapper;
+          template <typename TargetType_, typename DestructorType_>
+          friend class DestructorWrapper;
 
-        public:
-            /**
-             * \brief Get the value and perform type conversion.
-             * \tparam VariableType The type of the value.
-             * \return The value you want.
-             */
-            template <typename VariableType>
-            const VariableType& GetValueCast() const
-            {
-                return *static_cast<const VariableType*>(GetValue());
+         public:
+          /**
+           * \brief Get the value and perform type conversion.
+           * \tparam VariableType The type of the value.
+           * \return The value you want.
+           */
+          template <typename VariableType>
+          const VariableType& GetValueCast() const {
+            return *static_cast<const VariableType*>(GetValue());
+          }
+
+          /**
+           * \brief Get the value and perform type conversion.
+           * \tparam VariableType The type of the value.
+           * \return The value you want.
+           */
+          template <typename VariableType>
+          VariableType& GetValueCast() {
+            return *static_cast<VariableType*>(GetValue());
+          }
+
+          /**
+           * \brief Set new value.
+           * \tparam TargetType The type of new value.
+           * \tparam VariableType The type of value to be changed.
+           * \param other New value.
+           * \return Returns true if the value is set successfully, otherwise
+           * returns false.
+           */
+          template <typename TargetType, typename VariableType>
+          bool SetValueCast(TargetType&& other) {
+            static_assert(Utils::Conversion<TargetType, VariableType>::value,
+                          "TargetType can not conver to VariableType.");
+            VariableType* value = static_cast<VariableType*>(GetValue());
+            if (value == nullptr) {
+              return false;
+            }
+            *value = other;
+
+            return true;
+          }
+
+         public:
+          /**
+           * \brief Default initialization. The initialized object is invalid.
+           */
+          Variable() = default;
+
+          /**
+           * \brief Use the registered destructor to destruct. If the destructor
+           * is not registered actively, the destructor of each class itself
+           * will be used.
+           */
+          ~Variable();
+
+          /**
+           * \brief Create a \ref MM::Reflection::Variable from an rvalue.
+           * \tparam VariableType VariableType The type of rvalue.
+           * \param other One object.
+           * \param is_refrence Is true, create refrence variable, otherwise
+           * create common variable. \remark The new \ref
+           * MM::Reflection::Variable holds a value to other.
+           */
+          template <typename VariableType>
+          static Variable CreateVariable(VariableType&& other,
+                                         bool is_refrence = false) {
+            if (is_refrence || std::is_lvalue_reference_v<VariableType>) {
+              Variable variable{};
+              variable.variable_type_ = Variable::VariableType::SMALL_OBJECT;
+              void* small_object_address = &variable.wrapper_.small_wrapper_;
+              new (small_object_address)
+                  VariableRefrenceWrapper<VariableType>{other};
+              return variable;
+            }
+            if constexpr (sizeof(VariableType) <=
+                          sizeof(SmallObject) - sizeof(void*)) {
+              Variable variable{};
+              variable.variable_type_ = Variable::VariableType::SMALL_OBJECT;
+              void* small_object_address = &variable.wrapper_.small_wrapper_;
+              new (small_object_address)
+                  VariableWrapper<std::remove_reference_t<VariableType>>{
+                      std::forward<VariableType>(other)};
+              return variable;
             }
 
-            /**
-             * \brief Get the value and perform type conversion.
-             * \tparam VariableType The type of the value.
-             * \return The value you want.
-             */
-            template <typename VariableType>
-            VariableType& GetValueCast()
-            {
-                return *static_cast<VariableType*>(GetValue());
+            return Variable{new VariableWrapper<std::remove_reference_t<VariableType>>{std::forward<VariableType>(other)}};
+          }
+
+          template <typename VariableType, typename... Args>
+          static Variable EmplaceVariable(Args&&... args) {
+            if constexpr (sizeof(VariableType) <=
+                          sizeof(SmallObject) - sizeof(void*)) {
+              Variable variable{};
+              variable.variable_type_ = Variable::VariableType::SMALL_OBJECT;
+              void* small_object_address = &variable.wrapper_.small_wrapper_;
+              new (small_object_address)
+                  VariableWrapper<std::remove_reference_t<VariableType>>{
+                      std::forward<Args>(args)...};
+              return variable;
             }
 
-            /**
-             * \brief Set new value.
-             * \tparam TargetType The type of new value.
-             * \tparam VariableType The type of value to be changed.
-             * \param other New value.
-             * \return Returns true if the value is set successfully, otherwise returns
-             * false.
-             */
-            template <typename TargetType, typename VariableType>
-            bool SetValueCast(TargetType&& other)
-            {
-                static_assert(Utils::Conversion<TargetType, VariableType>::value, "TargetType can not conver to VariableType.");
-                VariableType* value = static_cast<VariableType*>(GetValue());
-                if (value == nullptr)
-                {
-                    return false;
-                }
-                *value = other;
+            return Variable{
+                new VariableWrapper<std::remove_reference_t<VariableType>>{
+                    std::forward<Args>(args)...}};
+          }
 
-                return true;
+          /**
+           * \brief Create a \ref MM::Reflection::Variable from an rvalue.
+           * \tparam VariableType VariableType The type of rvalue.
+           * \param address The position of the newly constructed object.
+           * \param other One object.
+           * \param is_refrence Is true, create refrence variable, otherwise
+           * create common variable. \remark The new \ref
+           * MM::Reflection::Variable holds a value to other.
+           */
+          template <typename VariableType>
+          static Variable CreateVariablePlacement(void* address,
+                                                  VariableType&& other,
+                                                  bool is_refrence = false) {
+            if (is_refrence || std::is_lvalue_reference_v<VariableType>) {
+              VariableRefrenceWrapper<VariableType>* wrapper =
+                  new (address) VariableRefrenceWrapper<VariableType>(other);
+              return Variable{wrapper, true};
             }
 
-        public:
-            /**
-             * \brief Default initialization. The initialized object is invalid.
-             */
-            Variable() = default;
+            VariableWrapper<std::remove_reference_t<VariableType>>* wrapper =
+                new (address)
+                    VariableWrapper<std::remove_reference_t<VariableType>>(
+                        std::forward<VariableType>(other));
+            return Variable{wrapper, true};
+          }
 
-            /**
-             * \brief Use the registered destructor to destruct. If the destructor is not registered actively, the destructor of each class itself will be used.
-             */
-            ~Variable();
+          template <typename VariableType, typename... Args>
+          static Variable EmplaceVariablePlacement(void* address,
+                                                   Args&&... args) {
+            VariableWrapper<std::remove_reference_t<VariableType>>* wrapper =
+                new (address)
+                    VariableWrapper<std::remove_reference_t<VariableType>>(
+                        std::forward<Args>(args)...);
+            return Variable{wrapper, true};
+          }
 
-            /**
-             * \brief Create a \ref MM::Reflection::Variable from an rvalue.
-             * \tparam VariableType VariableType The type of rvalue.
-             * \param other One object.
-             * \param is_refrence Is true, create refrence variable, otherwise create common variable.
-             * \remark The new \ref MM::Reflection::Variable holds a value to other.
-             */
-            template <typename VariableType>
-            static Variable CreateVariable(VariableType&& other, bool is_refrence = false)
-            {
-                if (is_refrence || std::is_lvalue_reference_v<VariableType>)
-                {
-                  Variable variable{};
-                  variable.variable_type_ = Variable::VariableType::SMALL_OBJECT;
-                  void* small_object_address = &variable.wrapper_.small_wrapper_;
-                  new (small_object_address)VariableRefrenceWrapper<VariableType>{other};
-                  return variable;
-                }
-                if constexpr (sizeof(VariableType) <= sizeof(SmallObject) - sizeof(void*)) {
-                  Variable variable{};
-                  variable.variable_type_ = Variable::VariableType::SMALL_OBJECT;
-                  void* small_object_address = &variable.wrapper_.small_wrapper_;
-                  new (small_object_address)VariableWrapper<std::remove_reference_t<VariableType>>{std::forward<VariableType>(other)};
-                  return variable;
-                }
+          static Variable CreateVoidVariable();
 
-                return Variable{
-                    std::make_unique<VariableWrapper<std::remove_reference_t<VariableType>>>(
-                        std::forward<VariableType>(other))
-                };
-            }
+          /**
+           * \brief Copy constructor.
+           * \param other Other objects will be copied to this object.
+           * \remark If the value held by this object has no copy constructor,
+           * this function will do nothing. \remark If \ref other is an invalid
+           * object, this object will also change to an invalid object.
+           */
+          Variable(const Variable& other);
 
-            template <typename VariableType, typename... Args>
-            static Variable EmplaceVariable(Args&&... args)
-            {
-                if constexpr (sizeof(VariableType) <= sizeof(SmallObject) - sizeof(void*)) {
-                  Variable variable{};
-                  variable.variable_type_ = Variable::VariableType::SMALL_OBJECT;
-                  void* small_object_address = &variable.wrapper_.small_wrapper_;
-                  new (small_object_address)VariableWrapper<std::remove_reference_t<VariableType>>{std::forward<Args>(args)...};
-                  return variable;
-                }
+          /**
+           * \brief Move constructor.
+           * \param other Other objects will be moved to this object.
+           * \remark If the value held by this object has no move constructor,
+           * this function will do nothing. \remark If \ref other is an invalid
+           * object, this object will also change to an invalid object.
+           */
+          Variable(Variable&& other) noexcept;
 
-                return Variable{
-                    std::make_unique<VariableWrapper<std::remove_reference_t<VariableType>>>(
-                        std::forward<Args>(args)...)
-                };
-            }
+          /**
+           * \brief Copy Assign.
+           * \param other Other objects will be copied to this object.
+           * \remark If the value held by this object has no copy assign, this
+           * function will do nothing.
+           * \remark If \ref other is an invalid object, this
+           * object will also change to an invalid object.
+           */
+          Variable& operator=(const Variable& other);
 
-            /**
-             * \brief Create a \ref MM::Reflection::Variable from an rvalue.
-             * \tparam VariableType VariableType The type of rvalue.
-             * \param address The position of the newly constructed object.
-             * \param other One object.
-             * \param is_refrence Is true, create refrence variable, otherwise create common variable.
-             * \remark The new \ref MM::Reflection::Variable holds a value to other.
-             */
-            template <typename VariableType>
-            static Variable CreateVariablePlacement(void* address, VariableType&& other, bool is_refrence = false)
-            {
-              if (is_refrence || std::is_lvalue_reference_v<VariableType>) {
-                VariableRefrenceWrapper<VariableType>* wrapper =
-                    new (address) VariableRefrenceWrapper<VariableType>(other);
-                return Variable{
-                    std::unique_ptr<VariableRefrenceWrapper<VariableType>>(wrapper), true};
-              }
+          /**
+           * \brief Move Assign.
+           * \param other Other objects will be moved to this object.
+           * \remark If the value held by this object has no move assign, this
+           * function will do nothing.
+           * \remark If \ref other is an invalid object, this object will also
+           * change to an invalid object.
+           */
+          Variable& operator=(Variable&& other) noexcept;
 
-              VariableWrapper<std::remove_reference_t<VariableType>>* wrapper =
-                  new (address)
-                      VariableWrapper<std::remove_reference_t<VariableType>>(
-                          std::forward<VariableType>(other));
-              return Variable{std::unique_ptr<
-                  VariableWrapper<std::remove_reference_t<VariableType>>>(wrapper), true};
-            }
+          /**
+           * \brief Construct an object from a VariableWrapperBase*.
+           * \param variable_wrapper VariableWrapperBase* containing variable data.
+           * \param placement Indicates whether the passed in object is a
+           * placement new object.
+           */
+          explicit Variable(
+              VariableWrapperBase* variable_wrapper,
+              bool placement = false);
 
-            template <typename VariableType, typename... Args>
-            static Variable EmplaceVariablePlacement(void* address, Args&&... args)
-            {
-              VariableWrapper<std::remove_reference_t<VariableType>>* wrapper =
-                  new (address)
-                      VariableWrapper<std::remove_reference_t<VariableType>>(
-                          std::forward<Args>(args)...);
-              return Variable{std::unique_ptr<
-                  VariableWrapper<std::remove_reference_t<VariableType>>>(wrapper), true};
-            }
+         public:
+          /**
+           * \brief bool conversion.Call \ref IsValid.
+           */
+          explicit operator bool() const;
 
-            static Variable CreateVoidVariable();
+          /**
+           * \brief Judge whether the object is a valid object.
+           * \return Returns true if the object is a valid object, otherwise
+           * returns false.
+           */
+          bool IsValid() const;
 
-            /**
-             * \brief Copy constructor.
-             * \param other Other objects will be copied to this object.
-             * \remark If the value held by this object has no copy constructor, this
-             * function will do nothing. \remark If \ref other is an invalid object, this
-             * object will also change to an invalid object.
-             */
-            Variable(const Variable& other);
+          bool IsVoid() const;
 
-            /**
-             * \brief Move constructor.
-             * \param other Other objects will be moved to this object.
-             * \remark If the value held by this object has no move constructor, this
-             * function will do nothing.
-             * \remark If \ref other is an invalid object, this
-             * object will also change to an invalid object.
-             */
-            Variable(Variable&& other) noexcept;
+          bool IsRefrenceVariable() const;
 
-            /**
-             * \brief Copy Assign.
-             * \param other Other objects will be copied to this object.
-             * \remark If the value held by this object has no copy assign, this
-             * function will do nothing.
-             * \remark If \ref other is an invalid object, this
-             * object will also change to an invalid object.
-             */
-            Variable& operator=(const Variable& other);
+          bool IsPropertyVariable() const;
 
-            /**
-             * \brief Move Assign.
-             * \param other Other objects will be moved to this object.
-             * \remark If the value held by this object has no move assign, this
-             * function will do nothing.
-             * \remark If \ref other is an invalid object, this object will also
-             * change to an invalid object.
-             */
-            Variable& operator=(Variable&& other) noexcept;
+          /**
+           * \brief Get the value of the object held by this object.
+           * \return The value pointer of the object held by this object.
+           * \remark It is not recommended for users and may cause runtime
+           * errors. \remark If object is invalid, it will return nullptr.
+           */
+          const void* GetValue() const;
 
-            /**
-             * \brief Construct an object from an std::unique_ptr<VariableWrapperBase>.
-             * \param variable_wrapper std::unique_ptr<VariableWrapperBase> containing variable data.
-             * \param placement Indicates whether the passed in object is a placement new object.
-             */
-            explicit Variable(std::unique_ptr<VariableWrapperBase>&& variable_wrapper, bool placement = false);
+          /**
+           * \brief Get the value of the object held by this object.
+           * \return The value pointer of the object held by this object.
+           * \remark It is not recommended for users and may cause runtime
+           * errors. \remark If object is invalid, it will return nullptr.
+           */
+          void* GetValue();
 
-        public:
-            /**
-             * \brief bool conversion.Call \ref IsValid.
-             */
-            explicit operator bool() const;
+          /**
+           * \brief Copy the new value to the object held by the pair, and this
+           * function will call the copy assignment function. \return Returns
+           * true if the value is set successfully, otherwise returns false.
+           * \remark It is not recommended for users and may cause runtime
+           * errors. \remark If object is not valid, it will do nothing and
+           * return false.
+           */
+          bool CopyValue(const void* other);
 
-            /**
-             * \brief Judge whether the object is a valid object.
-             * \return Returns true if the object is a valid object, otherwise returns
-             * false.
-             */
-            bool IsValid() const;
+          /**
+           * \brief Move the new value to the object held by the pair, and this
+           * function will call the move assignment function. \return Returns
+           * true if the value is set successfully, otherwise returns false.
+           * \remark It is not recommended for users and may cause runtime
+           * errors. \remark If object is not valid, it will do nothing and
+           * return false.
+           */
+          bool MoveValue(void* other);
 
-            bool IsVoid() const;
+          /**
+           * \brief Get the MM::Reflection::Type of the object held by this
+           * object. \return The "MM::Reflection::Type" of the object held by
+           * this object. \remark If object is not valid, it will return the
+           * nullptr.
+           */
+          const Type* GetType() const;
 
-            bool IsRefrenceVariable() const;
+          /**
+           * \brief Get meta data.
+           * \return Returns std::weak_ptr containing metadata.
+           * \remark If the type is not registered or this object is invalid,
+           * the nullptr will be returned.
+           */
+          const Meta* GetMeta() const;
 
-            bool IsPropertyVariable() const;
+          /**
+           * \brief Gets the properties of the object held by this object.
+           * \param property_name The name of property.
+           * \return A MM::Reflection::Variable that holds the specific
+           * property.
+           */
+          Variable GetPropertyVariable(const std::string& property_name);
 
-            /**
-             * \brief Get the value of the object held by this object.
-             * \return The value pointer of the object held by this object.
-             * \remark It is not recommended for users and may cause runtime errors.
-             * \remark If object is invalid, it will return nullptr.
-             */
-            const void* GetValue() const;
+          /**
+           * \brief Gets the properties of the object held by this object.
+           * \param property_name The name of property.
+           * \return A MM::Reflection::Variable that holds the specific
+           * property.
+           */
+          Variable GetPropertyVariable(const std::string& property_name) const;
 
-            /**
-             * \brief Get the value of the object held by this object.
-             * \return The value pointer of the object held by this object.
-             * \remark It is not recommended for users and may cause runtime errors.
-             * \remark If object is invalid, it will return nullptr.
-             */
-            void* GetValue();
+          /**
+           * \brief Invoke the function with 0 arguments.
+           * \param method_name The name of a method that you want call.
+           * \return \ref MM::Reflection::Variable containing the return value
+           * of this function. \remark If the number or type of incoming
+           * argument is different from the argument required by the function
+           * held by this object or the target method not exist, the function
+           * held by this object will not be called and return an empty \ref
+           * MM::Reflection::Variable.
+           */
+          Variable Invoke(const std::string& method_name);
 
-            /**
-             * \brief Copy the new value to the object held by the pair, and this function will call the copy assignment function.
-             * \return Returns true if the value is set successfully, otherwise returns
-             * false.
-             * \remark It is not recommended for users and may cause runtime errors.
-             * \remark If object is not valid, it will do nothing and return false.
-             */
-            bool CopyValue(const void* other);
+          /**
+           * \brief Invoke the function with 0 arguments.
+           * \param method_name The name of a method that you want call.
+           * \param arg1 1st argument.
+           * \return \ref MM::Reflection::Variable containing the return value
+           * of this function. \remark If the number or type of incoming
+           * argument is different from the argument required by the function
+           * held by this object or the target method not exist, the function
+           * held by this object will not be called and return an empty \ref
+           * MM::Reflection::Variable.
+           */
+          Variable Invoke(const std::string& method_name, Variable& arg1);
 
-            /**
-             * \brief Move the new value to the object held by the pair, and this function will call the move assignment function.
-             * \return Returns true if the value is set successfully, otherwise returns
-             * false.
-             * \remark It is not recommended for users and may cause runtime errors.
-             * \remark If object is not valid, it will do nothing and return false.
-             */
-            bool MoveValue(void* other);
+          /**
+           * \brief Invoke the function with 0 arguments.
+           * \param method_name The name of a method that you want call.
+           * \param arg1 1st argument.
+           * \param arg2 2ed argument.
+           * \return \ref MM::Reflection::Variable containing the return value
+           * of this function. \remark If the number or type of incoming
+           * argument is different from the argument required by the function
+           * held by this object or the target method not exist, the function
+           * held by this object will not be called and return an empty \ref
+           * MM::Reflection::Variable.
+           */
+          Variable Invoke(const std::string& method_name, Variable& arg1,
+                          Variable& arg2);
 
+          /**
+           * \brief Invoke the function with 0 arguments.
+           * \param method_name The name of a method that you want call.
+           * \param arg1 1st argument.
+           * \param arg2 2ed argument.
+           * \param arg3 3rd argument.
+           * \return \ref MM::Reflection::Variable containing the return value
+           * of this function. \remark If the number or type of incoming
+           * argument is different from the argument required by the function
+           * held by this object or the target method not exist, the function
+           * held by this object will not be called and return an empty \ref
+           * MM::Reflection::Variable.
+           */
+          Variable Invoke(const std::string& method_name, Variable& arg1,
+                          Variable& arg2, Variable& arg3);
 
-            /**
-             * \brief Get the MM::Reflection::Type of the object held by this object.
-             * \return The "MM::Reflection::Type" of the object held by this object.
-             * \remark If object is not valid, it will return the nullptr.
-             */
-            const Type* GetType() const;
+          /**
+           * \brief Invoke the function with 0 arguments.
+           * \param method_name The name of a method that you want call.
+           * \param arg1 1st argument.
+           * \param arg2 2ed argument.
+           * \param arg3 3rd argument.
+           * \param arg4 4th argument.
+           * \return \ref MM::Reflection::Variable containing the return value
+           * of this function. \remark If the number or type of incoming
+           * argument is different from the argument required by the function
+           * held by this object or the target method not exist, the function
+           * held by this object will not be called and return an empty \ref
+           * MM::Reflection::Variable.
+           */
+          Variable Invoke(const std::string& method_name, Variable& arg1,
+                          Variable& arg2, Variable& arg3, Variable& arg4);
 
-            /**
-             * \brief Get meta data.
-             * \return Returns std::weak_ptr containing metadata.
-             * \remark If the type is not registered or this object is invalid, the
-             * nullptr will be returned.
-             */
-            const Meta* GetMeta() const;
+          /**
+           * \brief Invoke the function with 0 arguments.
+           * \param method_name The name of a method that you want call.
+           * \param arg1 1st argument.
+           * \param arg2 2ed argument.
+           * \param arg3 3rd argument.
+           * \param arg4 4th argument.
+           * \param arg5 5th argument.
+           * \return \ref MM::Reflection::Variable containing the return value
+           * of this function. \remark If the number or type of incoming
+           * argument is different from the argument required by the function
+           * held by this object or the target method not exist, the function
+           * held by this object will not be called and return an empty \ref
+           * MM::Reflection::Variable.
+           */
+          Variable Invoke(const std::string& method_name, Variable& arg1,
+                          Variable& arg2, Variable& arg3, Variable& arg4,
+                          Variable& arg5);
 
-            /**
-             * \brief Gets the properties of the object held by this object.
-             * \param property_name The name of property.
-             * \return A MM::Reflection::Variable that holds the specific property.
-             */
-            Variable GetPropertyVariable(const std::string& property_name);
+          /**
+           * \brief Invoke the function with 0 arguments.
+           * \param method_name The name of a method that you want call.
+           * \param arg1 1st argument.
+           * \param arg2 2ed argument.
+           * \param arg3 3rd argument.
+           * \param arg4 4th argument.
+           * \param arg5 5th argument.
+           * \param arg6 6th argument.
+           * \return \ref MM::Refl::Variable containing the return value of this
+           * function.
+           * \remark If the number or type of incoming argument is different
+           * from the argument required by the function held by this object or
+           * the target method not exist, the function held by this object will
+           * not be called and return an empty \ref MM::Reflection::Variable.
+           */
+          Variable Invoke(const std::string& method_name, Variable& arg1,
+                          Variable& arg2, Variable& arg3, Variable& arg4,
+                          Variable& arg5, Variable& arg6);
 
-            /**
-             * \brief Gets the properties of the object held by this object.
-             * \param property_name The name of property.
-             * \return A MM::Reflection::Variable that holds the specific property.
-             */
-            Variable GetPropertyVariable(const std::string& property_name) const;
+          /**
+           * \brief Invoke the function with 0 arguments.
+           * \param method_name The name of a method that you want call.
+           * \param args Arguments.
+           * \return \ref MM::Reflection::Variable containing the return value
+           * of this function. \remark If the number or type of incoming
+           * argument is different from the argument required by the function
+           * held by this object or the target method not exist, the function
+           * held by this object will not be called and return an empty \ref
+           * MM::Reflection::Variable.
+           */
+          Variable Invoke(const std::string& method_name,
+                          std::vector<Variable*>& args);
 
-            /**
-             * \brief Invoke the function with 0 arguments.
-             * \param method_name The name of a method that you want call.
-             * \return \ref MM::Reflection::Variable containing the return value of this
-             * function.
-             * \remark If the number or type of incoming argument is different
-             * from the argument required by the function held by this object or the target method not exist, the
-             * function held by this object will not be called and return an empty \ref
-             * MM::Reflection::Variable.
-             */
-            Variable Invoke(const std::string& method_name);
+          /**
+           * \brief Invoke the function with 0 arguments.
+           * \param method_name The name of a method that you want call.
+           * \param args Arguments.
+           * \return \ref MM::Reflection::Variable containing the return value
+           * of this function. \remark If the number or type of incoming
+           * argument is different from the argument required by the function
+           * held by this object or the target method not exist, the function
+           * held by this object will not be called and return an empty \ref
+           * MM::Reflection::Variable.
+           */
+          Variable Invoke(const std::string& method_name,
+                          std::vector<Variable*>&& args);
 
-            /**
-             * \brief Invoke the function with 0 arguments.
-             * \param method_name The name of a method that you want call.
-             * \param arg1 1st argument.
-             * \return \ref MM::Reflection::Variable containing the return value of this
-             * function.
-             * \remark If the number or type of incoming argument is different
-             * from the argument required by the function held by this object or the target method not exist, the
-             * function held by this object will not be called and return an empty \ref
-             * MM::Reflection::Variable.
-             */
-            Variable Invoke(const std::string& method_name, Variable& arg1);
+          /**
+           * \brief Returns a pointer to the managed object and releases the
+           * ownership. \return The pointer to the managed object.
+           */
+          void* ReleaseOwnership();
 
-            /**
-             * \brief Invoke the function with 0 arguments.
-             * \param method_name The name of a method that you want call.
-             * \param arg1 1st argument.
-             * \param arg2 2ed argument.
-             * \return \ref MM::Reflection::Variable containing the return value of this
-             * function.
-             * \remark If the number or type of incoming argument is different
-             * from the argument required by the function held by this object or the target method not exist, the
-             * function held by this object will not be called and return an empty \ref
-             * MM::Reflection::Variable.
-             */
-            Variable Invoke(const std::string& method_name, Variable& arg1, Variable& arg2);
+          /**
+           * \brief Destroy this object.
+           */
+          void Destroy();
 
-            /**
-             * \brief Invoke the function with 0 arguments.
-             * \param method_name The name of a method that you want call.
-             * \param arg1 1st argument.
-             * \param arg2 2ed argument.
-             * \param arg3 3rd argument.
-             * \return \ref MM::Reflection::Variable containing the return value of this
-             * function.
-             * \remark If the number or type of incoming argument is different
-             * from the argument required by the function held by this object or the target method not exist, the
-             * function held by this object will not be called and return an empty \ref
-             * MM::Reflection::Variable.
-             */
-            Variable Invoke(const std::string& method_name, Variable& arg1, Variable& arg2, Variable& arg3);
-
-            /**
-             * \brief Invoke the function with 0 arguments.
-             * \param method_name The name of a method that you want call.
-             * \param arg1 1st argument.
-             * \param arg2 2ed argument.
-             * \param arg3 3rd argument.
-             * \param arg4 4th argument.
-             * \return \ref MM::Reflection::Variable containing the return value of this
-             * function.
-             * \remark If the number or type of incoming argument is different
-             * from the argument required by the function held by this object or the target method not exist, the
-             * function held by this object will not be called and return an empty \ref
-             * MM::Reflection::Variable.
-             */
-            Variable Invoke(const std::string& method_name, Variable& arg1, Variable& arg2, Variable& arg3,
-                            Variable& arg4);
-
-            /**
-             * \brief Invoke the function with 0 arguments.
-             * \param method_name The name of a method that you want call.
-             * \param arg1 1st argument.
-             * \param arg2 2ed argument.
-             * \param arg3 3rd argument.
-             * \param arg4 4th argument.
-             * \param arg5 5th argument.
-             * \return \ref MM::Reflection::Variable containing the return value of this
-             * function.
-             * \remark If the number or type of incoming argument is different
-             * from the argument required by the function held by this object or the target method not exist, the
-             * function held by this object will not be called and return an empty \ref
-             * MM::Reflection::Variable.
-             */
-            Variable Invoke(const std::string& method_name, Variable& arg1, Variable& arg2, Variable& arg3,
-                            Variable& arg4, Variable& arg5);
-
-            /**
-             * \brief Invoke the function with 0 arguments.
-             * \param method_name The name of a method that you want call.
-             * \param arg1 1st argument.
-             * \param arg2 2ed argument.
-             * \param arg3 3rd argument.
-             * \param arg4 4th argument.
-             * \param arg5 5th argument.
-             * \param arg6 6th argument.
-             * \return \ref MM::Refl::Variable containing the return value of this
-             * function.
-             * \remark If the number or type of incoming argument is different
-             * from the argument required by the function held by this object or the target method not exist, the
-             * function held by this object will not be called and return an empty \ref
-             * MM::Reflection::Variable.
-             */
-            Variable Invoke(const std::string& method_name, Variable& arg1, Variable& arg2, Variable& arg3,
-                            Variable& arg4, Variable& arg5, Variable& arg6);
-
-            /**
-             * \brief Invoke the function with 0 arguments.
-             * \param method_name The name of a method that you want call.
-             * \param args Arguments.
-             * \return \ref MM::Reflection::Variable containing the return value of this
-             * function.
-             * \remark If the number or type of incoming argument is different
-             * from the argument required by the function held by this object or the target method not exist, the
-             * function held by this object will not be called and return an empty \ref
-             * MM::Reflection::Variable.
-             */
-            Variable Invoke(const std::string& method_name, std::vector<Variable*>& args);
-
-            /**
-             * \brief Invoke the function with 0 arguments.
-             * \param method_name The name of a method that you want call.
-             * \param args Arguments.
-             * \return \ref MM::Reflection::Variable containing the return value of this
-             * function.
-             * \remark If the number or type of incoming argument is different
-             * from the argument required by the function held by this object or the target method not exist, the
-             * function held by this object will not be called and return an empty \ref
-             * MM::Reflection::Variable.
-             */
-            Variable Invoke(const std::string& method_name, std::vector<Variable*>&& args);
-
-            /**
-             * \brief Returns a pointer to the managed object and releases the ownership.
-             * \return The pointer to the managed object.
-             */
-            void* ReleaseOwnership();
-
-            /**
-             * \brief Destroy this object.
-             */
-            void Destroy();
-
-        private:
+         private:
           enum class VariableType {
             INVALID,
             SMALL_OBJECT,
@@ -1062,10 +1073,10 @@ namespace MM
             COMMON_OBJECT
           };
 
-         // The small object is an object of 8 bytes or less, plus a virtual
-         // function table pointer, resulting in a size of 16 bytes. To erase
-         // type information, use this structure instead.
-         struct SmallObject {
+          // The small object is an object of 8 bytes or less, plus a virtual
+          // function table pointer, resulting in a size of 16 bytes. To erase
+          // type information, use this structure instead.
+          struct SmallObject {
             void* ptr1{nullptr};
             void* ptr2{nullptr};
 
@@ -1078,39 +1089,46 @@ namespace MM
             }
           };
 
-         const VariableWrapperBase* GetWrapperBasePtr() const {
-           switch (variable_type_) {
-             case VariableType::SMALL_OBJECT:
-               return wrapper_.small_wrapper_.GetWrpperBasePtr();
-             case VariableType::COMMON_OBJECT:
-               return wrapper_.common_wrapper_;
-             case VariableType::PLACMENT_OBJECT:
-               return wrapper_.placement_wrapper_;
-             default:
-               return nullptr;
-           }
-         }
+          const VariableWrapperBase* GetWrapperBasePtr() const {
+            switch (variable_type_) {
+              case VariableType::SMALL_OBJECT:
+                return wrapper_.small_wrapper_.GetWrpperBasePtr();
+              case VariableType::COMMON_OBJECT:
+                return wrapper_.common_wrapper_;
+              case VariableType::PLACMENT_OBJECT:
+                return wrapper_.placement_wrapper_;
+              default:
+                return nullptr;
+            }
+          }
 
-         VariableWrapperBase* GetWrapperBasePtr() {
-           switch (variable_type_) {
-             case VariableType::SMALL_OBJECT:
-               return wrapper_.small_wrapper_.GetWrpperBasePtr();
-             case VariableType::COMMON_OBJECT:
-               return wrapper_.common_wrapper_;
-             case VariableType::PLACMENT_OBJECT:
-               return wrapper_.placement_wrapper_;
-             default:
-               return nullptr;
-           }
-         }
+          VariableWrapperBase* GetWrapperBasePtr() {
+            switch (variable_type_) {
+              case VariableType::SMALL_OBJECT:
+                return wrapper_.small_wrapper_.GetWrpperBasePtr();
+              case VariableType::COMMON_OBJECT:
+                return wrapper_.common_wrapper_;
+              case VariableType::PLACMENT_OBJECT:
+                return wrapper_.placement_wrapper_;
+              default:
+                return nullptr;
+            }
+          }
 
-        private:
-            union Wrapper {
-              SmallObject small_wrapper_{};
-              VariableWrapperBase* common_wrapper_;
-              VariableWrapperBase* placement_wrapper_;
-            } wrapper_{};
-            VariableType variable_type_{VariableType::INVALID};
+         private:
+          union Wrapper {
+            SmallObject small_wrapper_{};
+            VariableWrapperBase* common_wrapper_;
+            VariableWrapperBase* placement_wrapper_;
+          } wrapper_{};
+          VariableType variable_type_{VariableType::INVALID};
         };
-    } // namespace Reflection
+
+        // The size of the variable wrapper is the size of the original type
+        // plus the size of a virtual function table pointer.
+        inline std::uint64_t GetVariableWrpperSize(
+            std::uint64_t original_type_size) {
+          return original_type_size + sizeof(void*);
+        }
+        } // namespace Reflection
 } // namespace MM

@@ -87,10 +87,10 @@ MM::Reflection::Variable& MM::Reflection::Variable::operator=(
 }
 
 MM::Reflection::Variable::Variable(
-    std::unique_ptr<VariableWrapperBase>&& variable_wrapper,
+    VariableWrapperBase* variable_wrapper,
     const bool placement /*= false*/)
     : wrapper_(), variable_type_(VariableType::COMMON_OBJECT) {
-  wrapper_.common_wrapper_ = variable_wrapper.release();
+  wrapper_.common_wrapper_ = variable_wrapper;
   if (placement) {
     variable_type_ = VariableType::PLACMENT_OBJECT;
   }

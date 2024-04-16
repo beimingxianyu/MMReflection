@@ -11,7 +11,7 @@ const std::string& MM::Reflection::Constructor::GetConstructorName() const {
     return GetEmptyString();
   }
 
-  return method_wrapper_->GetMethodName();
+  return common_constructor_wrapper_->GetMethodName();
 }
 
 std::size_t MM::Reflection::Constructor::HashCode() const {
@@ -19,11 +19,11 @@ std::size_t MM::Reflection::Constructor::HashCode() const {
     return 0;
   }
 
-  return method_wrapper_->HashCode();
+  return common_constructor_wrapper_->HashCode();
 }
 
 bool MM::Reflection::Constructor::IsValid() const {
-  return method_wrapper_ != nullptr && method_wrapper_->IsValid();
+  return common_constructor_wrapper_ != nullptr && common_constructor_wrapper_->IsValid();
 }
 
 std::size_t MM::Reflection::Constructor::GetArgumentNumber() const {
@@ -31,7 +31,7 @@ std::size_t MM::Reflection::Constructor::GetArgumentNumber() const {
     return 0;
   }
 
-  return method_wrapper_->GetArgumentNumber();
+  return common_constructor_wrapper_->GetArgumentNumber();
 }
 
 const MM::Reflection::Type* MM::Reflection::Constructor::GetClassType() const {
@@ -39,7 +39,7 @@ const MM::Reflection::Type* MM::Reflection::Constructor::GetClassType() const {
     return nullptr;
   }
 
-  return method_wrapper_->GetClassType();
+  return common_constructor_wrapper_->GetClassType();
 }
 
 const MM::Reflection::Type* MM::Reflection::Constructor::GetArgumentType(
@@ -48,11 +48,11 @@ const MM::Reflection::Type* MM::Reflection::Constructor::GetArgumentType(
     return nullptr;
   }
 
-  return method_wrapper_->GetArgumentType(argument_index);
+  return common_constructor_wrapper_->GetArgumentType(argument_index);
 }
 
 const MM::Reflection::Meta* MM::Reflection::Constructor::GetClassMeta() const {
-  const Type* class_type = method_wrapper_->GetClassType();
+  const Type* class_type = common_constructor_wrapper_->GetClassType();
   if (class_type == nullptr) {
     return nullptr;
   }
@@ -62,7 +62,7 @@ const MM::Reflection::Meta* MM::Reflection::Constructor::GetClassMeta() const {
 
 const MM::Reflection::Meta* MM::Reflection::Constructor::GetArgumentMeta(
     std::uint32_t argument_index) const {
-  const Type* argument_type = method_wrapper_->GetArgumentType(argument_index);
+  const Type* argument_type = common_constructor_wrapper_->GetArgumentType(argument_index);
   if (argument_type == nullptr) {
     return nullptr;
   }
@@ -75,7 +75,18 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke() const {
     return Variable{};
   }
 
-  return method_wrapper_->Invoke(empty_variable);
+  return common_constructor_wrapper_->Invoke(empty_variable);
+}
+
+MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
+    void* placement_address) const {
+  if (!IsValid()) {
+    return Variable{};
+  }
+
+  Variable address_variable = Variable::CreateVariable(placement_address);
+  return placement_constructor_wrapper_->Invoke(empty_variable,
+                                                address_variable);
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
@@ -84,7 +95,18 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
     return Variable{};
   }
 
-  return method_wrapper_->Invoke(empty_variable, arg1);
+  return common_constructor_wrapper_->Invoke(empty_variable, arg1);
+}
+
+MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
+    void* placement_address, Variable& arg1) const {
+  if (!IsValid()) {
+    return Variable{};
+  }
+
+  Variable address_variable = Variable::CreateVariable(placement_address);
+  return placement_constructor_wrapper_->Invoke(empty_variable,
+                                                address_variable, arg1);
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
@@ -93,7 +115,18 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
     return Variable{};
   }
 
-  return method_wrapper_->Invoke(empty_variable, arg1, arg2);
+  return common_constructor_wrapper_->Invoke(empty_variable, arg1, arg2);
+}
+
+MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
+    void* placement_address, Variable& arg1, Variable& arg2) const {
+  if (!IsValid()) {
+    return Variable{};
+  }
+
+  Variable address_variable = Variable::CreateVariable(placement_address);
+  return placement_constructor_wrapper_->Invoke(empty_variable,
+                                                address_variable, arg1, arg2);
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
@@ -102,7 +135,19 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
     return Variable{};
   }
 
-  return method_wrapper_->Invoke(empty_variable, arg1, arg2, arg3);
+  return common_constructor_wrapper_->Invoke(empty_variable, arg1, arg2, arg3);
+}
+
+MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
+    void* placement_address, Variable& arg1, Variable& arg2,
+    Variable& arg3) const {
+  if (!IsValid()) {
+    return Variable{};
+  }
+
+  Variable address_variable = Variable::CreateVariable(placement_address);
+  return placement_constructor_wrapper_->Invoke(
+      empty_variable, address_variable, arg1, arg2, arg3);
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
@@ -111,7 +156,20 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
     return Variable{};
   }
 
-  return method_wrapper_->Invoke(empty_variable, arg1, arg2, arg3, arg4);
+  return common_constructor_wrapper_->Invoke(empty_variable, arg1, arg2, arg3,
+                                             arg4);
+}
+
+MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
+    void* placement_address, Variable& arg1, Variable& arg2, Variable& arg3,
+    Variable& arg4) const {
+  if (!IsValid()) {
+    return Variable{};
+  }
+
+  Variable address_variable = Variable::CreateVariable(placement_address);
+  return placement_constructor_wrapper_->Invoke(
+      empty_variable, address_variable, arg1, arg2, arg3, arg4);
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
@@ -121,7 +179,20 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
     return Variable{};
   }
 
-  return method_wrapper_->Invoke(empty_variable, arg1, arg2, arg3, arg4, arg5);
+  return common_constructor_wrapper_->Invoke(empty_variable, arg1, arg2, arg3,
+                                             arg4, arg5);
+}
+
+MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
+    void* placement_address, Variable& arg1, Variable& arg2, Variable& arg3,
+    Variable& arg4, Variable& arg5) const {
+  if (!IsValid()) {
+    return Variable{};
+  }
+
+  Variable address_variable = Variable::CreateVariable(placement_address);
+  return placement_constructor_wrapper_->Invoke(
+      empty_variable, address_variable, arg1, arg2, arg3, arg4, arg5);
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
@@ -131,8 +202,21 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
     return Variable{};
   }
 
-  return method_wrapper_->Invoke(empty_variable, arg1, arg2, arg3, arg4, arg5,
-                                 arg6);
+  return common_constructor_wrapper_->Invoke(empty_variable, arg1, arg2, arg3,
+                                             arg4, arg5, arg6);
+}
+
+MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
+    void* placement_address, Variable& arg1, Variable& arg2, Variable& arg3,
+    Variable& arg4, Variable& arg5, Variable& arg6) const {
+  if (!IsValid()) {
+    return Variable{};
+  }
+
+  Variable address_variable = Variable::CreateVariable(placement_address);
+  std::vector<Variable*> placement_args = {
+      &address_variable, &arg1, &arg2, &arg3, &arg4, &arg5, &arg6};
+  return placement_constructor_wrapper_->Invoke(empty_variable, placement_args);
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
@@ -141,7 +225,22 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
     return Variable{};
   }
 
-  return method_wrapper_->Invoke(empty_variable, args);
+  return common_constructor_wrapper_->Invoke(empty_variable, args);
+}
+
+MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
+    void* placement_address, std::vector<Variable*>& args) const {
+  if (!IsValid()) {
+    return Variable{};
+  }
+
+  Variable address_variable = Variable::CreateVariable(placement_address);
+  std::vector<Variable*> placement_args(1 + args.size());
+  placement_args[0] = &address_variable;
+  for (std::uint32_t i = 1; i != placement_args.size(); ++i) {
+    placement_args[i] = args[i - 1];
+  }
+  return placement_constructor_wrapper_->Invoke(empty_variable, placement_args);
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
@@ -149,6 +248,14 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
   return Invoke(args);
 }
 
+MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
+    void* placement_address, std::vector<Variable*>&& args) const {
+  return Invoke(placement_address, args);
+}
+
 MM::Reflection::Constructor::Constructor(
-    std::unique_ptr<MethodWrapperBase>&& method_wrapper)
-    : method_wrapper_(std::move(method_wrapper)) {}
+    std::unique_ptr<MethodWrapperBase>&& common_constructor_wrapper,
+    std::unique_ptr<MethodWrapperBase>&& placement_constructor_wrapper)
+    : common_constructor_wrapper_(std::move(common_constructor_wrapper)),
+      placement_constructor_wrapper_(std::move(placement_constructor_wrapper)) {
+}

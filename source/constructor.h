@@ -19,8 +19,11 @@ class Constructor {
   template<typename InstanceType, typename ...Args>
   static Constructor CreateConstructor(
       const std::string& constructor_name,
-      Utils::GetFunctionPointTypeT<InstanceType, InstanceType, true, false, false, Args...> function_ptr) {
-    return Constructor{std::make_unique<MethodWrapper<InstanceType, InstanceType, true, false, false, Args...>>(constructor_name, function_ptr)};
+      Utils::GetFunctionPointTypeT<InstanceType, InstanceType, true, false, false, Args...> common_constructor_ptr,
+      Utils::GetFunctionPointTypeT<void, InstanceType, true, false, false, void*, Args...> placement_constructor_ptr) {
+    std::unique_ptr<MethodWrapperBase> common_constructor_wrapper = std::make_unique<MethodWrapper<InstanceType, InstanceType, true, false, false, Args...>>(constructor_name, common_constructor_ptr);
+    std::unique_ptr<MethodWrapperBase> placement_constructor_wrapper = std::make_unique<MethodWrapper<void, InstanceType, true, false, false, void*, Args...>>(constructor_name, placement_constructor_ptr);
+    return Constructor{std::move(common_constructor_wrapper), std::move(placement_constructor_wrapper)};
   }
 
  public:
@@ -88,6 +91,18 @@ class Constructor {
   Variable Invoke() const;
 
   /**
+   * \brief Invoke the placement constructor with 0 arguments.
+   * \param placement_address The location of the newly constructed
+   * VariableWrapper<OriginalType>.
+   * \remark The constructed object is MM::
+   * Reflection::VariableWrapper<OriginalType>, not the original type, so the
+   * reserved space size is not the same as the original type. It is recommended
+   * to use MM::Reflection::GetVariableWrapperSize(std::uint64_t) to
+   * calculate the required reserved space size.
+   */
+  Variable Invoke(void* placement_address) const;
+
+  /**
    * \brief Invoke the function with 1 arguments.
    * \param arg1 1st argument.
    * \return \ref MM::Reflection::Variable containing the constructed value of
@@ -98,6 +113,18 @@ class Constructor {
    * and return an empty \ref MM::Reflection::Variable.
    */
   Variable Invoke(Variable& arg1) const;
+
+  /**
+   * \brief Invoke the placement constructor with 0 arguments.
+   * \param placement_address The location of the newly constructed
+   * VariableWrapper<OriginalType>.
+   * \remark The constructed object is MM::
+   * Reflection::VariableWrapper<OriginalType>, not the original type, so the
+   * reserved space size is not the same as the original type. It is recommended
+   * to use MM::Reflection::GetVariableWrapperSize(std::uint64_t) to
+   * calculate the required reserved space size.
+   */
+  Variable Invoke(void* placement_address, Variable& arg1) const;
 
   /**
    * \brief Invoke the function with 2 arguments.
@@ -113,6 +140,19 @@ class Constructor {
   Variable Invoke(Variable& arg1, Variable& arg2) const;
 
   /**
+   * \brief Invoke the placement constructor with 0 arguments.
+   * \param placement_address The location of the newly constructed
+   * VariableWrapper<OriginalType>.
+   * \remark The constructed object is MM::
+   * Reflection::VariableWrapper<OriginalType>, not the original type, so the
+   * reserved space size is not the same as the original type. It is recommended
+   * to use MM::Reflection::GetVariableWrapperSize(std::uint64_t) to
+   * calculate the required reserved space size.
+   */
+  Variable Invoke(void* placement_address, Variable& arg1,
+                  Variable& arg2) const;
+
+  /**
    * \brief Invoke the function with 3 arguments.
    * \param arg1 1st argument.
    * \param arg2 2ed argument.
@@ -125,6 +165,19 @@ class Constructor {
    * and return an empty \ref MM::Reflection::Variable.
    */
   Variable Invoke(Variable& arg1, Variable& arg2, Variable& arg3) const;
+
+  /**
+   * \brief Invoke the placement constructor with 0 arguments.
+   * \param placement_address The location of the newly constructed
+   * VariableWrapper<OriginalType>.
+   * \remark The constructed object is MM::
+   * Reflection::VariableWrapper<OriginalType>, not the original type, so the
+   * reserved space size is not the same as the original type. It is recommended
+   * to use MM::Reflection::GetVariableWrapperSize(std::uint64_t) to
+   * calculate the required reserved space size.
+   */
+  Variable Invoke(void* placement_address, Variable& arg1, Variable& arg2,
+                  Variable& arg3) const;
 
   /**
    * \brief Invoke the function with 4 arguments.
@@ -143,6 +196,19 @@ class Constructor {
                   Variable& arg4) const;
 
   /**
+   * \brief Invoke the placement constructor with 0 arguments.
+   * \param placement_address The location of the newly constructed
+   * VariableWrapper<OriginalType>.
+   * \remark The constructed object is MM::
+   * Reflection::VariableWrapper<OriginalType>, not the original type, so the
+   * reserved space size is not the same as the original type. It is recommended
+   * to use MM::Reflection::GetVariableWrapperSize(std::uint64_t) to
+   * calculate the required reserved space size.
+   */
+  Variable Invoke(void* placement_address, Variable& arg1, Variable& arg2,
+                  Variable& arg3, Variable& arg4) const;
+
+  /**
    * \brief Invoke the function with 5 arguments.
    * \param arg1 1st argument.
    * \param arg2 2ed argument.
@@ -158,6 +224,19 @@ class Constructor {
    */
   Variable Invoke(Variable& arg1, Variable& arg2, Variable& arg3,
                   Variable& arg4, Variable& arg5) const;
+
+  /**
+   * \brief Invoke the placement constructor with 0 arguments.
+   * \param placement_address The location of the newly constructed
+   * VariableWrapper<OriginalType>.
+   * \remark The constructed object is MM::
+   * Reflection::VariableWrapper<OriginalType>, not the original type, so the
+   * reserved space size is not the same as the original type. It is recommended
+   * to use MM::Reflection::GetVariableWrapperSize(std::uint64_t) to
+   * calculate the required reserved space size.
+   */
+  Variable Invoke(void* placement_address, Variable& arg1, Variable& arg2,
+                  Variable& arg3, Variable& arg4, Variable& arg5) const;
 
   /**
    * \brief Invoke the function with 6 arguments.
@@ -178,6 +257,20 @@ class Constructor {
                   Variable& arg4, Variable& arg5, Variable& arg6) const;
 
   /**
+   * \brief Invoke the placement constructor with 0 arguments.
+   * \param placement_address The location of the newly constructed
+   * VariableWrapper<OriginalType>.
+   * \remark The constructed object is MM::
+   * Reflection::VariableWrapper<OriginalType>, not the original type, so the
+   * reserved space size is not the same as the original type. It is recommended
+   * to use MM::Reflection::GetVariableWrapperSize(std::uint64_t) to
+   * calculate the required reserved space size.
+   */
+  Variable Invoke(void* placement_address, Variable& arg1, Variable& arg2,
+                  Variable& arg3, Variable& arg4, Variable& arg5,
+                  Variable& arg6) const;
+
+  /**
    * \brief Call the function with any number of parameters.
    * \param args The list of arguments,
    * \return \ref MM::Reflection::Variable containing the return value of this
@@ -189,6 +282,18 @@ class Constructor {
    * MM::Reflection::Variable.
    */
   Variable Invoke(std::vector<Variable*>& args) const;
+
+  /**
+   * \brief Invoke the placement constructor with 0 arguments.
+   * \param placement_address The location of the newly constructed
+   * VariableWrapper<OriginalType>.
+   * \remark The constructed object is MM::
+   * Reflection::VariableWrapper<OriginalType>, not the original type, so the
+   * reserved space size is not the same as the original type. It is recommended
+   * to use MM::Reflection::GetVariableWrapperSize(std::uint64_t) to
+   * calculate the required reserved space size.
+   */
+  Variable Invoke(void* placement_address, std::vector<Variable*>& args) const;
 
   /**
    * \brief Call the function with any number of parameters.
@@ -203,14 +308,27 @@ class Constructor {
    */
   Variable Invoke(std::vector<Variable*>&& args) const;
 
+  /**
+   * \brief Invoke the placement constructor with 0 arguments.
+   * \param placement_address The location of the newly constructed
+   * VariableWrapper<OriginalType>.
+   * \remark The constructed object is MM::
+   * Reflection::VariableWrapper<OriginalType>, not the original type, so the
+   * reserved space size is not the same as the original type. It is recommended
+   * to use MM::Reflection::GetVariableWrapperSize(std::uint64_t) to
+   * calculate the required reserved space size.
+   */
+  Variable Invoke(void* placement_address, std::vector<Variable*>&& args) const;
+
  private:
-  explicit Constructor(std::unique_ptr<MethodWrapperBase>&& method_wrapper);
+  Constructor(std::unique_ptr<MethodWrapperBase>&& common_constructor_wrapper, std::unique_ptr<MethodWrapperBase>&& placement_constructor_wrapper);
 
  private:
   static Variable empty_variable;
 
   private:
-    std::unique_ptr<MethodWrapperBase> method_wrapper_{};
+    std::unique_ptr<MethodWrapperBase> common_constructor_wrapper_{};
+    std::unique_ptr<MethodWrapperBase> placement_constructor_wrapper_{};
 };
 }
 }
