@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <iostream>
 #include <filesystem>
 
 #include "constructor.h"
@@ -99,14 +100,51 @@ public:
 
 private:
   void Register() {
-    // auto& name_to_type_database = GetNameToTypeHashDatabase();
-    // auto& meta_database = GetMetaDatabase();
-    // if (auto find_result = name_to_type_database.find(meta_.GetTypeName()); find_result != name_to_type_database.end()) {
-    //   assert(find_result->second == );
-    // }
-    auto name_to_hash_emplace_result = GetNameToTypeHashDatabase().emplace(std::pair{meta_.GetTypeName(), meta_.GetType().GetTypeHashCode()});
+    auto& name_to_type_database = GetNameToTypeHashDatabase();
+    auto& meta_database = GetMetaDatabase();
+
+    // TODO Write unit tests for this section.
+    // Incremental registration.
+    if (auto find_result = name_to_type_database.find(meta_.GetTypeName()); find_result != name_to_type_database.end()) {
+      if (find_result->second != meta_.GetType().GetTypeHashCode()) {
+        std::cerr << "[Error] [MMReflecion] Different types use the same reflection type name, which is not allowed.(same reflection name:" << meta_.GetTypeName() << ")." << std::endl;
+        abort();
+      }
+
+      auto meta_find_result = meta_database.find(find_result->second);
+      assert(meta_find_result != nullptr);
+      Meta* old_meta = meta_find_result->second;
+
+      auto& old_meta_constructors = old_meta->constructors_;
+      for (auto& construtor: meta_.constructors_) {
+        if (old_meta_constructors.count(construtor.first) == 0) {
+          old_meta_constructors.emplace(construtor.first, std::move(construtor.second));
+        }
+      }
+      auto& old_meta_methods = old_meta->methods_;
+      for (auto& method: meta_.methods_) {
+        if (old_meta_methods.count(method.first) == 0) {
+          old_meta_methods.emplace(method.first, std::move(method.second));
+        }
+      }
+      auto& old_meta_properties = old_meta->properties_;
+      for (auto& property: meta_.properties_) {
+        if (old_meta_properties.count(property.first) == 0) {
+          old_meta_properties.emplace(property.first, std::move(property.second));
+        }
+      }
+
+      if (meta_.serializer_name_ != old_meta->serializer_name_) {
+        old_meta->serializer_name_ = meta_.serializer_name_;
+      }
+
+      return;
+    }
+
+    // Register a new type.
+    auto name_to_hash_emplace_result = name_to_type_database.emplace(std::pair{meta_.GetTypeName(), meta_.GetType().GetTypeHashCode()});
     assert(name_to_hash_emplace_result.second);
-    auto meta_data_emplace_result = GetMetaDatabase().emplace(std::pair{meta_.GetType().GetTypeHashCode(), new Meta{std::move(meta_)}});
+    auto meta_data_emplace_result = meta_database.emplace(std::pair{meta_.GetType().GetTypeHashCode(), new Meta{std::move(meta_)}});
     assert(meta_data_emplace_result.second);
   }
 

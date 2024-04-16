@@ -12,6 +12,8 @@
 namespace MM {
 namespace Reflection {
 class Meta {
+template <typename ClassType_> friend class Class;
+
 public:
   Meta() = delete;
   explicit Meta(const std::string& type_name, const Type& type,
