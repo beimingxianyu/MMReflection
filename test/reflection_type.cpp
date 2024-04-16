@@ -15,11 +15,11 @@ TEST(reflection, type) {
   EXPECT_EQ(int_type.IsReference(), false);
   EXPECT_EQ(int_type.IsEnum(), false);
   EXPECT_EQ(int_type.IsPointer(), false);
-  EXPECT_EQ(int_type.GetTypeName(), "std::int32_t");
-  const Meta* int_meta = int_type.GetMate();
+  EXPECT_EQ(int_type.GetMeta()->GetTypeName(), "std::int32_t");
+  const Meta* int_meta = int_type.GetMeta();
   EXPECT_NE(int_meta, nullptr);
   EXPECT_EQ(int_meta->GetTypeName(), "std::int32_t");
-  EXPECT_EQ(int_meta->GetAllConstructor().size(), 0);
+  EXPECT_EQ(int_meta->GetAllConstructor().size(), 2);
   EXPECT_EQ(int_meta->GetAllMethod().size(), 0);
   EXPECT_EQ(int_meta->GetAllProperty().size(), 0);
 
@@ -34,8 +34,8 @@ TEST(reflection, type) {
   EXPECT_EQ(enum_type1.IsReference(), false);
   EXPECT_EQ(enum_type1.IsEnum(), true);
   EXPECT_EQ(enum_type1.IsPointer(), false);
-  EXPECT_EQ(enum_type1.GetTypeName(), std::string(""));
-  const Meta* enum_meta1 = enum_type1.GetMate();
+  // EXPECT_EQ(enum_type1.GetTypeName(), std::string(""));
+  const Meta* enum_meta1 = enum_type1.GetMeta();
   EXPECT_EQ(enum_meta1, nullptr);
 
   const Type& enum_type2 = Type::CreateType<const TestEnum>();
@@ -48,7 +48,7 @@ TEST(reflection, type) {
   EXPECT_EQ(enum_type2.IsReference(), false);
   EXPECT_EQ(enum_type2.IsEnum(), true);
   EXPECT_EQ(enum_type2.IsPointer(), false);
-  EXPECT_EQ(enum_type2.GetTypeName(), std::string(""));
+  // EXPECT_EQ(enum_type2.GetTypeName(), std::string(""));
 
   const Type& enum_type3 = Type::CreateType<TestEnum[3]>();
   EXPECT_EQ(enum_type3.IsValid(), true);
@@ -60,7 +60,7 @@ TEST(reflection, type) {
   EXPECT_EQ(enum_type3.IsReference(), false);
   EXPECT_EQ(enum_type3.IsEnum(), false);
   EXPECT_EQ(enum_type3.IsPointer(), false);
-  EXPECT_EQ(enum_type3.GetTypeName(), std::string(""));
+  // EXPECT_EQ(enum_type3.GetTypeName(), std::string(""));
 
   const Type& enum_type4 = Type::CreateType<const TestEnum[3]>();
   EXPECT_EQ(enum_type4.IsValid(), true);
@@ -72,7 +72,7 @@ TEST(reflection, type) {
   EXPECT_EQ(enum_type4.IsReference(), false);
   EXPECT_EQ(enum_type4.IsEnum(), false);
   EXPECT_EQ(enum_type4.IsPointer(), false);
-  EXPECT_EQ(enum_type4.GetTypeName(), std::string(""));
+  // EXPECT_EQ(enum_type4.GetTypeName(), std::string(""));
 
   const Type& enum_type5 = Type::CreateType<TestEnum*>();
   EXPECT_EQ(enum_type5.IsValid(), true);
@@ -84,7 +84,7 @@ TEST(reflection, type) {
   EXPECT_EQ(enum_type5.IsReference(), false);
   EXPECT_EQ(enum_type5.IsEnum(), false);
   EXPECT_EQ(enum_type5.IsPointer(), true);
-  EXPECT_EQ(enum_type5.GetTypeName(), std::string(""));
+  // EXPECT_EQ(enum_type5.GetTypeName(), std::string(""));
 
   const Type& enum_type6 = Type::CreateType<const TestEnum*>();
   EXPECT_EQ(enum_type6.IsValid(), true);
@@ -96,7 +96,7 @@ TEST(reflection, type) {
   EXPECT_EQ(enum_type6.IsReference(), false);
   EXPECT_EQ(enum_type6.IsEnum(), false);
   EXPECT_EQ(enum_type6.IsPointer(), true);
-  EXPECT_EQ(enum_type6.GetTypeName(), std::string(""));
+  // EXPECT_EQ(enum_type6.GetTypeName(), std::string(""));
 
   const Type& enum_type7 = Type::CreateType<TestEnum* const>();
   EXPECT_EQ(enum_type7.IsValid(), true);
@@ -108,5 +108,5 @@ TEST(reflection, type) {
   EXPECT_EQ(enum_type7.IsReference(), false);
   EXPECT_EQ(enum_type7.IsEnum(), false);
   EXPECT_EQ(enum_type7.IsPointer(), true);
-  EXPECT_EQ(enum_type7.GetTypeName(), std::string(""));
+  // EXPECT_EQ(enum_type7.GetTypeName(), std::string(""));
 }

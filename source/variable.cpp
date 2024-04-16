@@ -463,7 +463,7 @@ const MM::Reflection::Type* MM::Reflection::VoidVariable::GetType() const {
   return &Result;
 }
 const MM::Reflection::Meta* MM::Reflection::VoidVariable::GetMeta() const {
-  return GetType()->GetMate();
+  return GetType()->GetMeta();
 }
 
 bool MM::Reflection::Variable::IsVoid() const {

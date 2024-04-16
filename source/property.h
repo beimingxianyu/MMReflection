@@ -150,7 +150,7 @@ class CommonPropertyWrapper
   const Meta* GetMeta() const override {
     const MM::Reflection::Type* PropertyType = GetType();
     assert(PropertyType != nullptr);
-    return PropertyType->GetMate();
+    return PropertyType->GetMeta();
   }
 
   /**
@@ -161,7 +161,7 @@ class CommonPropertyWrapper
   const Meta* GetClassMeta() const override {
     const MM::Reflection::Type* ClassType = GetClassType();
     assert(ClassType != nullptr);
-    return ClassType->GetMate();
+    return ClassType->GetMeta();
   }
 };
 

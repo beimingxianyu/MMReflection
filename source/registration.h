@@ -31,12 +31,12 @@ template<std::uint64_t RegisterID>
 struct MMAutoRegisterStruct;
 
 template<typename ConstructorClassType, typename ...Args>
-ConstructorClassType ConstructorFunction(Args ...args) {
+ConstructorClassType ConstructorFunction(Utils::GetFunctionArgTypeT<Args> ...args) {
   return ConstructorClassType{((Args)args)...};
 }
 
 template<typename ConstructorClassType, typename ...Args>
-void PlacementConstructorFunction(void* placement_address, Args ...args) {
+void PlacementConstructorFunction(void* placement_address, Utils::GetFunctionArgTypeT<Args> ...args) {
   new (placement_address)VariableWrapper<ConstructorClassType>{((Args)args)...};
 }
 
@@ -97,7 +97,11 @@ public:
 
   template<typename ...Args>
   Class& Constructor(const std::string& constructor_name) {
-    const bool add_result = meta_.AddConstructor(Constructor::CreateConstructor<ClassType_, Args...>(constructor_name, &ConstructorFunction<ClassType_, Args...>, &PlacementConstructorFunction<ClassType_, Args...>));
+    const bool add_result = meta_.AddConstructor(
+        Constructor::CreateConstructor<ClassType_, Args...>(
+            constructor_name,
+            &ConstructorFunction<ClassType_, Args...>,
+            &PlacementConstructorFunction<ClassType_, Args...>));
     assert(add_result);
 
     return *this;

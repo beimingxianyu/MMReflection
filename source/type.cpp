@@ -1,5 +1,7 @@
 #include "type.h"
 
+#include "meta.h"
+
 bool MM::Reflection::TypeWrapper<void>::IsVoid() const { return true; }
 
 bool MM::Reflection::TypeWrapper<void>::IsRegistered() const { return true; }
@@ -32,17 +34,9 @@ std::size_t MM::Reflection::TypeWrapper<void>::GetTypeHashCode() const { return 
 
 std::size_t MM::Reflection::TypeWrapper<void>::GetOriginalTypeHashCode() const { return GetTypeHashCode(); }
 
-std::string MM::Reflection::TypeWrapper<void>::GetTypeName() const { return "void";}
-
-const std::string& MM::Reflection::TypeWrapper<void>::GetOriginalTypeName()
-    const {
-  if (!IsRegistered()) {
-    return GetEmptyString();
-  }
-
-  static std::string void_type_name{"void"};
-
-  return void_type_name;
+std::string MM::Reflection::TypeWrapper<void>::GetTypeName(const std::string& orignal_type_name) const {
+  assert(orignal_type_name == "void");
+  return orignal_type_name;
 }
 
 const MM::Reflection::Meta* MM::Reflection::TypeWrapper<void>::GetMeta() const {
@@ -198,17 +192,18 @@ std::string MM::Reflection::Type::GetTypeName() const {
   if (!IsValid()) {
     return std::string();
   }
-  return type_wrapper_->GetTypeName();
+
+  return type_wrapper_->GetTypeName(GetOriginalTypeName());
 }
 
 std::string MM::Reflection::Type::GetOriginalTypeName() const {
   if (!IsValid()) {
     return std::string();
   }
-  return type_wrapper_->GetOriginalTypeName();
+  return GetMeta()->GetTypeName();
 }
 
-const MM::Reflection::Meta* MM::Reflection::Type::GetMate() const {
+const MM::Reflection::Meta* MM::Reflection::Type::GetMeta() const {
   if (!IsValid()) {
     return nullptr;
   }

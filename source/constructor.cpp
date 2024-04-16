@@ -57,7 +57,7 @@ const MM::Reflection::Meta* MM::Reflection::Constructor::GetClassMeta() const {
     return nullptr;
   }
 
-  return class_type->GetMate();
+  return class_type->GetMeta();
 }
 
 const MM::Reflection::Meta* MM::Reflection::Constructor::GetArgumentMeta(
@@ -67,7 +67,7 @@ const MM::Reflection::Meta* MM::Reflection::Constructor::GetArgumentMeta(
     return nullptr;
   }
 
-  return argument_type->GetMate();
+  return argument_type->GetMeta();
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke() const {

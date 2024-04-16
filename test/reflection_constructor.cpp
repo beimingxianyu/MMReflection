@@ -52,6 +52,17 @@ public:
         property5_(property5),
         property6_(property6),
         property7_(property7) {}
+  // ConstructorTestClass(const int property1, const float property2,
+  //                      const double property3, const int property4,
+  //                      const float property5, const double property6,
+  //                      const int& property7)
+  //     : property1_(property1),
+  //       property2_(property2),
+  //       property3_(property3),
+  //       property4_(property4),
+  //       property5_(property5),
+  //       property6_(property6),
+  //       property7_(property7) {}
 
   int property1_{1};
   float property2_{2.0};
@@ -60,6 +71,7 @@ public:
   float property5_{5.0};
   double property6_{6.0};
   TestProperty property7_{7, 8.0, 9.0};
+  // int property7_{7};
 };
 
 MM_REGISTER {

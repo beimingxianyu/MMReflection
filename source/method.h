@@ -448,7 +448,7 @@ class MethodWrapper
    * \return The \ref MM::Reflection::Meta of result type.
    */
   const Meta* GetReturnMeta() const override {
-    return GetReturnType()->GetMate();
+    return GetReturnType()->GetMeta();
   }
 
   /**
@@ -462,7 +462,7 @@ class MethodWrapper
       return nullptr; 
     }
 
-    return argument_type->GetMate();
+    return argument_type->GetMeta();
   }
 
   /**
@@ -470,7 +470,7 @@ class MethodWrapper
    * \return The \ref MM::Reflection::Meta of class type.
    */
   const Meta* GetClassMeta() const override {
-    return GetClassType()->GetMate();
+    return GetClassType()->GetMeta();
   }
 
 

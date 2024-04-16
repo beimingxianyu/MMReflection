@@ -334,6 +334,27 @@ struct GetNotConstRefrence<const T&>
 
 template<typename T>
 using GetNotConstRefrenceT = typename GetNotConstRefrence<T>::Type;
+
+
+template<typename T>
+struct GetFunctionArgType{
+  using Type = T;
+};
+
+template<typename T>
+struct GetFunctionArgType<const T>
+{
+  using Type = T;
+};
+
+template<typename T>
+struct GetFunctionArgType<const T&>
+{
+  using Type = const T&;
+};
+
+template<typename T>
+using GetFunctionArgTypeT = typename GetFunctionArgType<T>::Type;
 }  // namespace Utils
 
 struct Nil {};

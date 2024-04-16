@@ -247,7 +247,7 @@ namespace MM
              */
             const Meta* GetMeta() const override
             {
-                return GetType()->GetMate();
+                return GetType()->GetMeta();
             }
 
             /**
@@ -429,7 +429,7 @@ namespace MM
              */
             const Meta* GetMeta() const override
             {
-                return GetType()->GetMate();
+                return GetType()->GetMeta();
             }
 
             /**
@@ -694,14 +694,14 @@ namespace MM
            * \brief Create a \ref MM::Reflection::Variable from an rvalue.
            * \tparam VariableType VariableType The type of rvalue.
            * \param other One object.
-           * \param is_refrence Is true, create refrence variable, otherwise
+           * \param is_copy Is true, create new variable, otherwise
            * create common variable. \remark The new \ref
            * MM::Reflection::Variable holds a value to other.
            */
           template <typename VariableType>
           static Variable CreateVariable(VariableType&& other,
-                                         bool is_refrence = false) {
-            if (is_refrence || std::is_lvalue_reference_v<VariableType>) {
+                                         bool is_copy = false) {
+            if (!is_copy && std::is_lvalue_reference_v<VariableType>) {
               Variable variable{};
               variable.variable_type_ = Variable::VariableType::SMALL_OBJECT;
               void* small_object_address = &variable.wrapper_.small_wrapper_;
@@ -746,15 +746,15 @@ namespace MM
            * \tparam VariableType VariableType The type of rvalue.
            * \param address The position of the newly constructed object.
            * \param other One object.
-           * \param is_refrence Is true, create refrence variable, otherwise
+           * \param is_copy Is true, create new variable, otherwise
            * create common variable. \remark The new \ref
            * MM::Reflection::Variable holds a value to other.
            */
           template <typename VariableType>
           static Variable CreateVariablePlacement(void* address,
                                                   VariableType&& other,
-                                                  bool is_refrence = false) {
-            if (is_refrence || std::is_lvalue_reference_v<VariableType>) {
+                                                  bool is_copy = false) {
+            if (!is_copy && std::is_lvalue_reference_v<VariableType>) {
               VariableRefrenceWrapper<VariableType>* wrapper =
                   new (address) VariableRefrenceWrapper<VariableType>(other);
               return Variable{wrapper, true};

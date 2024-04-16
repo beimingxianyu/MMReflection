@@ -134,17 +134,7 @@ class TypeWrapperBase {
    * \remark If the type is not registered, the default empty std::string will
    * be returned.
    */
-  virtual std::string GetTypeName() const {return std::string("");}
-
-  /**
-   * \brief Get original type Name.
-   * \return The original type name.
-   * \remark A original type is a type without pointers, references, and
-   * constants. (Example:int*: int, int&: int, const int&: int, etc.)
-   * \remark If the type is not registered, the default empty std::string will
-   * be returned.
-   */
-  virtual const std::string& GetOriginalTypeName() const {return GetEmptyString();}
+  virtual std::string GetTypeName(const std::string& original_type_name) const {return std::string("");}
 
   /**
    * \brief Get meta data.
@@ -324,11 +314,11 @@ class TypeWrapper final : public TypeWrapperBase {
    * \remark If the type is not registered, the default empty std::string will
    * be returned.
    */
-  std::string GetTypeName() const override {
+  std::string GetTypeName(const std::string& original_type_name) const override {
     if (!IsRegistered()) {
       return std::string{};
     }
-    std::string result{GetOriginalTypeName()};
+    std::string result = original_type_name;
     if constexpr (std::is_pointer_v<TypeName>) {
       if constexpr (std::is_const_v<std::remove_pointer_t<TypeName>>) {
         result += " const ";
@@ -354,20 +344,6 @@ class TypeWrapper final : public TypeWrapperBase {
       }
     }
     return result;
-  }
-  /**
-   * \brief Get original type Name of \ref TypeName.
-   * \return The original type name of \ref TypeName.
-   * \remark A original type is a type without pointers, references, and
-   * constants. (Example:int*: int, int&: int, const int&: int, etc.)
-   * \remark If the type is not registered, the default empty std::string will
-   * be returned.
-   */
-  const std::string& GetOriginalTypeName() const override {
-    if (!IsRegistered()) {
-      return GetEmptyString();
-    }
-    return GetMetaDatabase().at(GetOriginalTypeHashCode())->GetTypeName();
   }
 
   /**
@@ -509,16 +485,7 @@ public:
    * \remark If the type is not registered, the default empty std::string will
    * be returned.
    */
-  std::string GetTypeName() const override;
-  /**
-   * \brief Get original type Name of \ref TypeName.
-   * \return The original type name of \ref TypeName.
-   * \remark A original type is a type without pointers, references, and
-   * constants. (Example:int*: int, int&: int, const int&: int, etc.)
-   * \remark If the type is not registered, the default empty std::string will
-   * be returned.
-   */
-  const std::string& GetOriginalTypeName() const override;
+  std::string GetTypeName(const std::string& original_type_name) const override;
 
   /**
    * \brief Get original type meta data.
@@ -730,7 +697,7 @@ class Type {
    * \remark If the type is not registered or this object is not valid, the
    * nullptr will be returned.
    */
-  const Meta* GetMate() const;
+  const Meta* GetMeta() const;
 
  private:
   std::unique_ptr<TypeWrapperBase> type_wrapper_ = nullptr;
