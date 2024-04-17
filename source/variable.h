@@ -632,8 +632,7 @@ namespace MM
           friend class VariableRefrenceWrapper;
           template <typename PropertyType, typename ClassType>
           friend class PropertyWrapper;
-          template <typename TargetType_, typename DestructorType_>
-          friend class DestructorWrapper;
+          friend class Constructor;
 
          public:
           /**

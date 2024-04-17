@@ -85,8 +85,8 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
   }
 
   Variable address_variable = Variable::CreateVariable(placement_address);
-  return placement_constructor_wrapper_->Invoke(empty_variable,
-                                                address_variable);
+  placement_constructor_wrapper_->Invoke(empty_variable, address_variable);
+  return Variable{static_cast<VariableWrapperBase*>(placement_address), true};
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
@@ -105,8 +105,9 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
   }
 
   Variable address_variable = Variable::CreateVariable(placement_address);
-  return placement_constructor_wrapper_->Invoke(empty_variable,
-                                                address_variable, arg1);
+  placement_constructor_wrapper_->Invoke(empty_variable, address_variable,
+                                         arg1);
+  return Variable{static_cast<VariableWrapperBase*>(placement_address), true};
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
@@ -125,8 +126,9 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
   }
 
   Variable address_variable = Variable::CreateVariable(placement_address);
-  return placement_constructor_wrapper_->Invoke(empty_variable,
-                                                address_variable, arg1, arg2);
+  placement_constructor_wrapper_->Invoke(empty_variable, address_variable, arg1,
+                                         arg2);
+  return Variable{static_cast<VariableWrapperBase*>(placement_address), true};
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
@@ -146,8 +148,9 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
   }
 
   Variable address_variable = Variable::CreateVariable(placement_address);
-  return placement_constructor_wrapper_->Invoke(
-      empty_variable, address_variable, arg1, arg2, arg3);
+  placement_constructor_wrapper_->Invoke(empty_variable, address_variable, arg1,
+                                         arg2, arg3);
+  return Variable{static_cast<VariableWrapperBase*>(placement_address), true};
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
@@ -168,8 +171,9 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
   }
 
   Variable address_variable = Variable::CreateVariable(placement_address);
-  return placement_constructor_wrapper_->Invoke(
-      empty_variable, address_variable, arg1, arg2, arg3, arg4);
+  placement_constructor_wrapper_->Invoke(empty_variable, address_variable, arg1,
+                                         arg2, arg3, arg4);
+  return Variable{static_cast<VariableWrapperBase*>(placement_address), true};
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
@@ -191,8 +195,9 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
   }
 
   Variable address_variable = Variable::CreateVariable(placement_address);
-  return placement_constructor_wrapper_->Invoke(
+  placement_constructor_wrapper_->Invoke(
       empty_variable, address_variable, arg1, arg2, arg3, arg4, arg5);
+  return Variable{static_cast<VariableWrapperBase*>(placement_address), true};
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
@@ -216,7 +221,8 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
   Variable address_variable = Variable::CreateVariable(placement_address);
   std::vector<Variable*> placement_args = {
       &address_variable, &arg1, &arg2, &arg3, &arg4, &arg5, &arg6};
-  return placement_constructor_wrapper_->Invoke(empty_variable, placement_args);
+  placement_constructor_wrapper_->Invoke(empty_variable, placement_args);
+  return Variable{static_cast<VariableWrapperBase*>(placement_address), true};
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
@@ -240,7 +246,8 @@ MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
   for (std::uint32_t i = 1; i != placement_args.size(); ++i) {
     placement_args[i] = args[i - 1];
   }
-  return placement_constructor_wrapper_->Invoke(empty_variable, placement_args);
+  placement_constructor_wrapper_->Invoke(empty_variable, placement_args);
+  return Variable{static_cast<VariableWrapperBase*>(placement_address), true};
 }
 
 MM::Reflection::Variable MM::Reflection::Constructor::Invoke(
