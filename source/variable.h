@@ -633,6 +633,7 @@ namespace MM
           template <typename PropertyType, typename ClassType>
           friend class PropertyWrapper;
           friend class Constructor;
+          friend class Meta;
 
          public:
           /**

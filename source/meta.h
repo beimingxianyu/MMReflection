@@ -16,6 +16,7 @@ template <typename ClassType_> friend class Class;
 
 public:
   Meta() = delete;
+  ~Meta() = default;
   explicit Meta(const std::string& type_name, const Type& type,
                 std::unordered_map<std::string, Constructor>&& constructors =
                     std::unordered_map<std::string, Constructor>{},
@@ -24,9 +25,9 @@ public:
                 std::unordered_map<std::string, Property>&& properties =
                     std::unordered_map<std::string, Property>{});
   Meta(const Meta& other) = delete;
-  Meta(Meta&& other) noexcept = default;
+  Meta(Meta&& other) noexcept;
   Meta& operator=(const Meta& other) = delete;
-  Meta& operator=(Meta&& other) = default;
+  Meta& operator=(Meta&& other) noexcept = delete;
 
 public:
   /**
@@ -269,6 +270,46 @@ public:
  Variable CreateInstance(const std::string& constructor_name,
                          std::vector<Variable*>& args) const;
 
+ static const std::string& GetEmptyObjectMethodName();
+
+ /**
+  * \brief Get a reference to the stored empty object.
+  * \note When registering metadata, if a static function of "GetEmptyObject"
+  * without any parameters is registered, it will be called and an empty object
+  * will be obtained, which will be captured and stored in the metadata. If the
+  * "GetEmptyObject" function is not registered, only an invalid MM::
+  * Reflection:: Variable object will be stored.
+  * \return The stored empty
+  * object.
+  */
+ Variable& GetEmptyVariable() const;
+
+ /**
+  * \brief Get the reference of "refrence Variable"(IsRefrenceVariable() result
+  * is true) of the stored empty object.
+  * \note When registering metadata, if a static function of "GetEmptyObject"
+  * without any parameters is registered, it will be called and an empty object
+  * will be obtained, which will be captured and stored in the metadata. If the
+  * "GetEmptyObject" function is not registered, only an invalid MM::
+  * Reflection:: Variable object will be stored.
+  * \return The reference of "refrence Variable"(IsRefrenceVariable()
+  * result is true) of the stored empty object.
+  */
+ Variable& GetEmptyVariableRefrence() const;
+
+ /**
+  * \brief Get the reference of "const refrence Variable"(IsRefrenceVariable()
+  * && GetType()->IsConst() is true) of the stored empty object.
+  * \note When registering metadata, if a static function of "GetEmptyObject"
+  * without any parameters is registered, it will be called and an empty object
+  * will be obtained, which will be captured and stored in the metadata. If the
+  * "GetEmptyObject" function is not registered, only an invalid MM::
+  * Reflection:: Variable object will be stored.
+  * \return The reference of "const refrence Variable"(IsRefrenceVariable() &&
+  * GetType()->IsConst() is true) of the stored empty object.
+  */
+ Variable& GetEmptyVariableConstRefrence() const;
+
 private:
   std::string type_name_{};
 
@@ -291,6 +332,12 @@ private:
    * \brief Property map.
    */
   std::unordered_map<std::string, Property> properties_;
+
+ mutable Variable empty_variable_{};
+
+ mutable Variable empty_variable_refrence_{};
+
+ mutable Variable empty_variable_const_refrence_{};
 
   std::string serializer_name_{};
 };

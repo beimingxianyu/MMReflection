@@ -176,7 +176,7 @@ class TypeWrapper final : public TypeWrapperBase {
    * false.
    */
   bool IsConst() const override {
-    return std::is_const_v<std::remove_reference_t<TypeName>>;
+    return Utils::IsConstV<std::remove_reference_t<TypeName>>;
   }
 
   /**
@@ -320,20 +320,20 @@ class TypeWrapper final : public TypeWrapperBase {
     }
     std::string result = original_type_name;
     if constexpr (std::is_pointer_v<TypeName>) {
-      if constexpr (std::is_const_v<std::remove_pointer_t<TypeName>>) {
+      if constexpr (Utils::IsConstV<std::remove_pointer_t<TypeName>>) {
         result += " const ";
       }
       result += "*";
-      if constexpr (std::is_const_v<TypeName>) {
+      if constexpr (Utils::IsConstV<TypeName>) {
         result += " const ";
       }
     } else if constexpr (std::is_array_v<TypeName>) {
-      if (std::is_const_v<TypeName>) {
+      if (Utils::IsConstV<TypeName>) {
         result += " const ";
       }
       result += "[]";
     } else {
-      if constexpr (std::is_const_v<std::remove_reference_t<TypeName>>) {
+      if constexpr (Utils::IsConstV<std::remove_reference_t<TypeName>>) {
         result += " const ";
       }
       if constexpr (std::is_lvalue_reference_v<TypeName>) {
@@ -502,7 +502,7 @@ class Type {
  public:
   template <typename TypeName>
   static const Type& CreateType() {
-    TypeID type_id{typeid(TypeName).hash_code(), std::is_const_v<TypeName>, std::is_reference_v<TypeName>};
+    TypeID type_id{typeid(TypeName).hash_code(), Utils::IsConstV<TypeName>, std::is_reference_v<TypeName>};
     auto& type_database = GetTypeDatabase();
     std::unordered_map<TypeID, const Type*>::iterator find_result = type_database.find(type_id);
     if (find_result == type_database.end()) {

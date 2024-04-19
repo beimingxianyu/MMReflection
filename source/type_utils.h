@@ -355,6 +355,20 @@ struct GetFunctionArgType<const T&>
 
 template<typename T>
 using GetFunctionArgTypeT = typename GetFunctionArgType<T>::Type;
+
+template <typename T> struct IsConst {
+  static constexpr bool Value = false;
+};
+
+template <typename T> struct IsConst<const T> {
+  static constexpr bool Value = true;
+};
+
+template <typename T> struct IsConst<const T &> {
+  static constexpr bool Value = true;
+};
+
+template <typename T> constexpr bool IsConstV = IsConst<T>::Value;
 }  // namespace Utils
 
 struct Nil {};

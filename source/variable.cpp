@@ -1,9 +1,11 @@
 #include "variable.h"
+
+#include <cstring>
 #include <memory>
 
 #include "meta.h"
-#include "type.h"
 #include "method.h"
+#include "type.h"
 
 MM::Reflection::Variable::~Variable() { Destroy(); };
 
@@ -73,6 +75,15 @@ MM::Reflection::Variable& MM::Reflection::Variable::operator=(
   if (this == std::addressof(other)) {
     return *this;
   }
+  if (!IsValid() && other.IsValid()) {
+    memcpy(&wrapper_, &other.wrapper_, sizeof(other.wrapper_));
+    variable_type_ = other.variable_type_;
+
+    other.variable_type_ = VariableType::INVALID;
+
+    return *this;
+  }
+
   if (!IsValid() || !other.IsValid()) {
     return *this;
   }

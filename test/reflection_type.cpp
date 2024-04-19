@@ -20,7 +20,8 @@ TEST(reflection, type) {
   EXPECT_NE(int_meta, nullptr);
   EXPECT_EQ(int_meta->GetTypeName(), "std::int32_t");
   EXPECT_EQ(int_meta->GetAllConstructor().size(), 2);
-  EXPECT_EQ(int_meta->GetAllMethod().size(), 0);
+  // have a "GetEmptyObject" function.
+  EXPECT_EQ(int_meta->GetAllMethod().size(), 1);
   EXPECT_EQ(int_meta->GetAllProperty().size(), 0);
 
   enum class TestEnum { UNDIFINED, VALUE1, VALUE2};

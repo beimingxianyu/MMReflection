@@ -11,6 +11,23 @@ MM::Reflection::Meta::Meta(
       methods_(std::move(methods)),
       properties_(std::move(properties)) {}
 
+MM::Reflection::Meta::Meta(Meta&& other) noexcept
+    : type_name_(std::move(other.type_name_)),
+      type_(std::move(other.type_)),
+      constructors_(std::move(other.constructors_)),
+      methods_(std::move(other.methods_)),
+      properties_(std::move(other.properties_)) {
+  empty_variable_ = std::move(other.empty_variable_);
+  empty_variable_refrence_ = std::move(other.empty_variable_refrence_);
+  empty_variable_const_refrence_ =
+      std::move(other.empty_variable_const_refrence_);
+  // If the referenced object is a small object, the reference address needs to be changed.
+  if (empty_variable_.variable_type_ == Variable::VariableType::SMALL_OBJECT) {
+    empty_variable_refrence_.wrapper_.small_wrapper_.ptr2 = empty_variable_.GetValue();
+    empty_variable_const_refrence_.wrapper_.small_wrapper_.ptr2 = empty_variable_.GetValue();
+  }
+}
+
 const std::string& MM::Reflection::Meta::GetTypeName() const {
   return type_name_;
 }
@@ -254,4 +271,24 @@ MM::Reflection::Variable MM::Reflection::Meta::CreateInstance(
   }
 
   return constructor->Invoke(args);
+}
+
+const std::string& MM::Reflection::Meta::GetEmptyObjectMethodName() {
+  static std::string empyt_object_method_name = "GetEmptyObject";
+
+  return empyt_object_method_name;
+}
+
+MM::Reflection::Variable& MM::Reflection::Meta::GetEmptyVariable() const {
+  return empty_variable_;
+}
+
+MM::Reflection::Variable& MM::Reflection::Meta::GetEmptyVariableRefrence()
+    const {
+  return empty_variable_refrence_;
+}
+
+MM::Reflection::Variable& MM::Reflection::Meta::GetEmptyVariableConstRefrence()
+    const {
+  return empty_variable_const_refrence_;
 }

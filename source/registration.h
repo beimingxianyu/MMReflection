@@ -108,6 +108,28 @@ public:
   }
 
 private:
+  static void SetEmptyObject(Meta& meta) {
+      if constexpr (!std::is_same_v<ClassType_, void>) {
+        if (!meta.empty_variable_.IsValid()) {
+          assert(!meta.empty_variable_refrence_.IsValid() && !meta.empty_variable_const_refrence_.IsValid());
+
+          const Reflection::Method* get_empty_object_method = meta.GetMethod(meta.GetEmptyObjectMethodName());
+          if (get_empty_object_method != nullptr &&
+              get_empty_object_method->IsValid() &&
+              get_empty_object_method->GetArgumentNumber() == 0 &&
+              get_empty_object_method->IsStatic() &&
+              meta.GetType().GetTypeHashCode() ==
+                  get_empty_object_method->GetReturnType()->GetTypeHashCode()) {
+            static Variable empty_variable = Variable::CreateVoidVariable();
+            meta.empty_variable_ = get_empty_object_method->Invoke(empty_variable);
+            meta.empty_variable_refrence_ = Variable::CreateVariable<ClassType_&>(meta.empty_variable_.GetValueCast<ClassType_>());
+            meta.empty_variable_const_refrence_ = Variable::CreateVariable<const ClassType_&>(meta.empty_variable_.GetValueCast<ClassType_>());
+          }
+
+        }
+      }
+  }
+
   void Register() {
     auto& name_to_type_database = GetNameToTypeHashDatabase();
     auto& meta_database = GetMetaDatabase();
@@ -147,10 +169,14 @@ private:
         old_meta->serializer_name_ = meta_.serializer_name_;
       }
 
+      SetEmptyObject(*old_meta);
+
       return;
     }
 
     // Register a new type.
+    SetEmptyObject(meta_);
+
     auto name_to_hash_emplace_result = name_to_type_database.emplace(std::pair{meta_.GetTypeName(), meta_.GetType().GetTypeHashCode()});
     assert(name_to_hash_emplace_result.second);
     auto meta_data_emplace_result = meta_database.emplace(std::pair{meta_.GetType().GetTypeHashCode(), new Meta{std::move(meta_)}});
