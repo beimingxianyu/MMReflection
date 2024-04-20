@@ -65,6 +65,13 @@ class TypeWrapperBase {
   virtual bool IsEnum() const {return false;}
 
   /**
+   * \brief Determine whether the type is trivial type.
+   * \return If the type is trivial type, it returns true,
+   * otherwise it returns false.
+   */
+  virtual bool IsTrivial() const {return false;}
+
+  /**
    * \brief Determine whether the type has a default constructor.
    * \return If the type contains a default constructor, it returns true,
    * otherwise it returns false.
@@ -213,6 +220,15 @@ class TypeWrapper final : public TypeWrapperBase {
    */
   bool IsEnum() const override {
     return std::is_enum_v<TypeName>;
+  }
+
+  /**
+   * \brief Determine whether the type is trivial type.
+   * \return If the type is trivial type, it returns true,
+   * otherwise it returns false.
+   */
+  bool IsTrivial() const override {
+   return std::is_trivial_v<TypeName>;
   }
 
   /**
@@ -591,6 +607,13 @@ class Type {
    * returns false.
    */
   bool IsEnum() const;
+
+  /**
+   * \brief Determine whether the type is trivial type.
+   * \return If the type is trivial type, it returns true,
+   * otherwise it returns false.
+   */
+  bool IsTrivial() const;
 
   /**
    * \brief Determine whether the type has a default constructor.

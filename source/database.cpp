@@ -73,9 +73,9 @@ MM::Reflection::GetNameToTypeHashDatabase() {
   return name_to_type_hash_data_base;
 }
 
-std::unordered_map<std::string, MM::Reflection::Serializer*>&
+std::unordered_map<std::string, MM::Reflection::SerializerBase*>&
 MM::Reflection::GetSerializerDatabase() {
-  static DatabaseWrapper<std::unordered_map<std::string, Serializer*>> g_serializer_database;
+  static DatabaseWrapper<std::unordered_map<std::string, SerializerBase*>> g_serializer_database;
 
   return g_serializer_database.database_;
 }

@@ -95,6 +95,22 @@ public:
     return *this;
   }
 
+  template<typename PropertyType>
+  Class& Property(const std::string& property_name, RefrencePropertyDescriptor<PropertyType> descriptor ) {
+    const bool add_result = meta_.AddProperty(Property::CreateRefrenceProperty<ClassType_, PropertyType>(property_name, descriptor.offset_));
+    assert(add_result);
+
+    return *this;
+  }
+
+  template<typename PropertyType>
+  Class& Property(const std::string& property_name, StaticRefrencePropertyDescriptor<PropertyType> descriptor ) {
+    const bool add_result = meta_.AddProperty(Property::CreateStaticRefrenceProperty<ClassType_, PropertyType>(property_name, descriptor.address_));
+    assert(add_result);
+
+    return *this;
+  }
+
   template<typename ...Args>
   Class& Constructor(const std::string& constructor_name) {
     const bool add_result = meta_.AddConstructor(

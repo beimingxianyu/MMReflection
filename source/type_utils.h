@@ -178,6 +178,7 @@ struct PropertyMetaData<PropertyType_ ClassType_::*> {
   using PropertyType = PropertyType_;
   constexpr static std::uint32_t size = sizeof(PropertyType_);
   constexpr static bool IsStatic = false;
+  constexpr static bool IsRefrence = false;
 };
 
 template <typename PropertyType_>
@@ -186,7 +187,26 @@ struct PropertyMetaData<PropertyType_ *> {
   using PropertyType = PropertyType_;
   constexpr static std::uint32_t size = sizeof(PropertyType_);
   constexpr static bool IsStatic = true;
+  constexpr static bool IsRefrence = false;
 };
+
+template <typename PropertyType_>
+struct PropertyMetaData<PropertyType_&> {
+  using ClassType = void;
+  using PropertyType = PropertyType_&;
+  constexpr static std::uint32_t size = sizeof(PropertyType_&);
+  constexpr static bool IsStatic = true;
+  constexpr static bool IsRefrence = true;
+};
+
+// template <typename PropertyType_>
+// struct PropertyMetaData<PropertyType_**> {
+//   using ClassType = void;
+//   using PropertyType = PropertyType_&;
+//   constexpr static std::uint32_t size = sizeof(PropertyType_&);
+//   constexpr static bool IsStatic = true;
+//   constexpr static bool IsRefrence = true;
+// };
 
 template <typename Fun>
 bool IsFunction = std::is_function_v<Fun>;

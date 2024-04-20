@@ -12,7 +12,7 @@ class Meta;
 class Type;
 class Variable;
 class DataBuffer;
-class Serializer;
+class SerializerBase;
 
 using TypeHashCode = std::uint64_t;
 
@@ -30,7 +30,7 @@ struct TypeID {
 std::unordered_map<std::string, const TypeHashCode>&
 GetNameToTypeHashDatabase();
 
-std::unordered_map<std::string, Serializer*>& GetSerializerDatabase();
+std::unordered_map<std::string, SerializerBase*>& GetSerializerDatabase();
 
 /**
  * \brief The Database of all registered metadata.

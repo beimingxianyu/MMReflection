@@ -173,7 +173,7 @@ void MM::Reflection::Meta::RemoveProperty(const std::string& property_name) {
 
 bool MM::Reflection::Meta::SetSerializerName(
     const std::string& serializer_name) {
-  const std::unordered_map<std::string, Serializer*>& data_base = GetSerializerDatabase();
+  const std::unordered_map<std::string, SerializerBase*>& data_base = GetSerializerDatabase();
   const auto find_rseult = data_base.find(serializer_name);
   if (find_rseult == nullptr) {
     return false;
@@ -279,6 +279,10 @@ const std::string& MM::Reflection::Meta::GetEmptyObjectMethodName() {
   return empyt_object_method_name;
 }
 
+bool MM::Reflection::Meta::HaveEmptyObject() const {
+  return empty_variable_.IsValid();
+}
+
 MM::Reflection::Variable& MM::Reflection::Meta::GetEmptyVariable() const {
   return empty_variable_;
 }
@@ -291,4 +295,12 @@ MM::Reflection::Variable& MM::Reflection::Meta::GetEmptyVariableRefrence()
 MM::Reflection::Variable& MM::Reflection::Meta::GetEmptyVariableConstRefrence()
     const {
   return empty_variable_const_refrence_;
+}
+
+const std::string& MM::Reflection::Meta::GetSerializerName() const {
+  return serializer_name_;
+}
+
+bool MM::Reflection::Meta::HaveSerializer() const {
+  return !GetSerializerName().empty();
 }

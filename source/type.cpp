@@ -111,6 +111,14 @@ bool MM::Reflection::Type::IsPointer() const {
 
 bool MM::Reflection::Type::IsEnum() const { return type_wrapper_->IsEnum(); }
 
+bool MM::Reflection::Type::IsTrivial() const {
+  if (!IsValid()) {
+    return false;
+  }
+
+  return type_wrapper_->IsTrivial();
+}
+
 bool MM::Reflection::Type::HaveDefaultConstructor() const {
   if (!IsValid()) {
     return false;

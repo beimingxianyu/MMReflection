@@ -7,6 +7,8 @@
 #include "method.h"
 #include "type.h"
 
+MM::Reflection::Type MM::Reflection::Variable::EmptyType{};
+
 MM::Reflection::Variable::~Variable() { Destroy(); };
 
 MM::Reflection::Variable::Variable(
@@ -159,7 +161,6 @@ bool MM::Reflection::Variable::MoveValue(void* other) {
 }
 
 const MM::Reflection::Type* MM::Reflection::Variable::GetType() const {
-  static Type EmptyType{};
   if (!IsValid()) {
     return &EmptyType;
   }
@@ -438,6 +439,11 @@ MM::Reflection::VariableWrapperBase::GetPropertyVariable(
 const MM::Reflection::Type* MM::Reflection::VariableWrapperBase::GetType()
     const {
   return nullptr;
+}
+
+const MM::Reflection::Type*
+MM::Reflection::VariableWrapperBase::GetPropertyRealType() const {
+  return GetType();
 }
 
 const MM::Reflection::Meta* MM::Reflection::VariableWrapperBase::GetMeta()

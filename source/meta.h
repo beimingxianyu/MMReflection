@@ -139,10 +139,6 @@ public:
 
  void RemoveProperty(const std::string& property_name);
 
- bool SetSerializerName(const std::string& serializer_name);
-
- void RemoveSerializerName();
-
  /**
   * \brief Create instance with 0 arguments.
   * \param constructor_name The name of the constructor used.
@@ -272,6 +268,8 @@ public:
 
  static const std::string& GetEmptyObjectMethodName();
 
+ bool HaveEmptyObject() const;
+
  /**
   * \brief Get a reference to the stored empty object.
   * \note When registering metadata, if a static function of "GetEmptyObject"
@@ -309,6 +307,14 @@ public:
   * GetType()->IsConst() is true) of the stored empty object.
   */
  Variable& GetEmptyVariableConstRefrence() const;
+
+ bool SetSerializerName(const std::string& serializer_name);
+
+ void RemoveSerializerName();
+
+ const std::string& GetSerializerName() const;
+
+ bool HaveSerializer() const;
 
 private:
   std::string type_name_{};
