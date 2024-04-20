@@ -4,6 +4,9 @@
 
 using namespace MM::Reflection;
 
+float g_property4_refrence{40.0};
+float g_property5_refrence{50.0f};
+
 class VariableTestClass {
   MM_GENERATE_REFLECTION_BODY()
 
@@ -14,6 +17,8 @@ public:
   int property1_{10};
   float property2_{20.0};
   static std::string property3_;
+  static float& property4_;
+  float& property5_{g_property5_refrence};
 
   int GetProperty1() const {
     return property1_;
@@ -37,6 +42,7 @@ public:
 };
 
 std::string VariableTestClass::property3_{"string"};
+float& VariableTestClass::property4_{g_property4_refrence};
 
 MM_REGISTER {
   Class<VariableTestClass>{"VariableTestClass"}
@@ -44,6 +50,8 @@ MM_REGISTER {
     .Property("property1_", &VariableTestClass::property1_)
     .Property("property2_", &VariableTestClass::property2_)
     .Property("property3_", &VariableTestClass::property3_)
+    .Property("property4_", StaticRefrencePropertyDescriptor<float&>{&VariableTestClass::property4_})
+    .Property("property5_", RefrencePropertyDescriptor<float&>{8})
     .Method("GetProperty1", &VariableTestClass::GetProperty1)
     .Method("GetProperty2", &VariableTestClass::GetProperty2)
     .Method("GetProperty2Refrence", &VariableTestClass::GetProperty2Refrence)
@@ -60,7 +68,7 @@ TEST(reflection, variable) {
   std::vector<const Property*> properties = variable_test_meta->GetAllProperty();
 
   EXPECT_EQ(constructors.size(), 1);
-  EXPECT_EQ(properties.size(), 3);
+  EXPECT_EQ(properties.size(), 5);
   EXPECT_EQ(methods.size(), 5);
 
   EXPECT_EQ(variable_test_meta->HaveConstructor("Init"), true);
@@ -98,19 +106,47 @@ TEST(reflection, variable) {
 
   Variable property1_variable = new_variable.GetPropertyVariable("property1_");
   Variable property2_variable = new_variable.GetPropertyVariable("property2_");
+  Variable property3_variable = new_variable.GetPropertyVariable("property3_");
+  Variable property4_variable = new_variable.GetPropertyVariable("property4_");
+  Variable property5_variable = new_variable.GetPropertyVariable("property5_");
   Variable invalid_property_variable = new_variable.GetPropertyVariable("invalid_property");
   EXPECT_EQ(property1_variable.IsValid(), true);
   EXPECT_EQ(property2_variable.IsValid(), true);
+  EXPECT_EQ(property3_variable.IsValid(), true);
+  EXPECT_EQ(property4_variable.IsValid(), true);
+  EXPECT_EQ(property5_variable.IsValid(), true);
   EXPECT_EQ(invalid_property_variable .IsValid(), false);
   EXPECT_EQ(property1_variable.IsRefrenceVariable(), true);
   EXPECT_EQ(property2_variable.IsRefrenceVariable(), true);
-  EXPECT_EQ(property1_variable.IsPropertyVariable(), true);
-  EXPECT_EQ(property2_variable.IsPropertyVariable(), true);
+  EXPECT_EQ(property3_variable.IsRefrenceVariable(), true);
+  EXPECT_EQ(property4_variable.IsRefrenceVariable(), true);
+  EXPECT_EQ(property5_variable.IsRefrenceVariable(), true);
   EXPECT_EQ(property1_variable.GetValueCast<int>(), 10);
   EXPECT_EQ(property2_variable.GetValueCast<float>(), 20.0f);
+  EXPECT_EQ(property3_variable.GetValueCast<std::string>(), std::string{"string"});
+  EXPECT_EQ(property4_variable.GetValueCast<float>(), 40.0f);
+  EXPECT_EQ(property5_variable.GetValueCast<float>(), 50.0f);
   property1_variable = Variable::CreateVariable<int>(20);
   property2_variable = Variable::CreateVariable<float>(10.0f);
+  property3_variable = Variable::CreateVariable<std::string>(std::string{"string2"});
+  property4_variable = Variable::CreateVariable<float>(0.0f);
+  property5_variable = Variable::CreateVariable<float>(-1.0f);
   EXPECT_EQ(variable_object->property1_, 20);
   EXPECT_EQ(variable_object->property2_, 10.0f);
+  EXPECT_EQ(variable_object->property3_, std::string("string2"));
+  EXPECT_EQ(variable_object->property4_, 0.0f);
+  EXPECT_EQ(variable_object->property5_, -1.0f);
+  EXPECT_EQ(property1_variable.GetType()->IsReference(), true);
+  EXPECT_EQ(property2_variable.GetType()->IsReference(), true);
+  EXPECT_EQ(property3_variable.GetType()->IsReference(), true);
+  EXPECT_EQ(property4_variable.GetType()->IsReference(), true);
+  EXPECT_EQ(property5_variable.GetType()->IsReference(), true);
+  EXPECT_EQ(property1_variable.GetPropertyRealType()->IsReference(), false);
+  EXPECT_EQ(property2_variable.GetPropertyRealType()->IsReference(), false);
+  EXPECT_EQ(property3_variable.GetPropertyRealType()->IsReference(), false);
+  EXPECT_EQ(property4_variable.GetPropertyRealType()->IsReference(), true);
+  EXPECT_EQ(property5_variable.GetPropertyRealType()->IsReference(), true);
+  EXPECT_EQ(property4_variable.GetValue(), &g_property4_refrence);
+  EXPECT_EQ(property5_variable.GetValue(), &g_property5_refrence);
 }
 
