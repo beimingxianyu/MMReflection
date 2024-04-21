@@ -8,72 +8,335 @@ class MethodTestClass {
   MM_GENERATE_REFLECTION_BODY()
 
 public:
+  char Function0 (char arg1) {
+    EXPECT_EQ(arg1, 1);
+    return static_cast<char>(0.0);
+  }
 
-  char Function0 (char arg1)  {return static_cast<char>(0.0);}
+  char CFunction0 (char arg1) const {
+    EXPECT_EQ(arg1, 1);
+    return static_cast<char>(1.0);
+  }
 
-  char CFunction0 (char arg1) const {return static_cast<char>(1.0);}
+  static char SFunction0 (char arg1) {
+    EXPECT_EQ(arg1, 1);
+    return static_cast<char>(2.0);
+  }
 
-  static char SFunction0 (char arg1)  {return static_cast<char>(2.0);}
+  std::uint16_t Function1 (char arg1, const std::uint16_t& arg2) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    return static_cast<std::uint16_t>(3.0);
+  }
 
-  std::uint16_t Function1 (char arg1, const std::uint16_t& arg2)  {return static_cast<std::uint16_t>(3.0);}
+  std::uint16_t CFunction1 (char arg1, const std::uint16_t& arg2) const {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    return static_cast<std::uint16_t>(4.0);
+  }
 
-  std::uint16_t CFunction1 (char arg1, const std::uint16_t& arg2) const {return static_cast<std::uint16_t>(4.0);}
+  static std::uint16_t SFunction1 (char arg1, const std::uint16_t& arg2) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    return static_cast<std::uint16_t>(5.0);
+  }
 
-  static std::uint16_t SFunction1 (char arg1, const std::uint16_t& arg2)  {return static_cast<std::uint16_t>(5.0);}
+  std::uint32_t Function2 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    return static_cast<std::uint32_t>(6.0);
+  }
 
-  std::uint32_t Function2 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3)  {return static_cast<std::uint32_t>(6.0);}
+  std::uint32_t CFunction2 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3) const {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    return static_cast<std::uint32_t>(7.0);
+  }
 
-  std::uint32_t CFunction2 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3) const {return static_cast<std::uint32_t>(7.0);}
+  static std::uint32_t SFunction2 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    return static_cast<std::uint32_t>(8.0);
+  }
 
-  static std::uint32_t SFunction2 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3)  {return static_cast<std::uint32_t>(8.0);}
+  std::uint64_t Function3 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    return static_cast<std::uint64_t>(9.0);
+  }
 
-  std::uint64_t Function3 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4)  {return static_cast<std::uint64_t>(9.0);}
+  std::uint64_t CFunction3 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4) const {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    return static_cast<std::uint64_t>(10.0);
+  }
 
-  std::uint64_t CFunction3 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4) const {return static_cast<std::uint64_t>(10.0);}
+  static std::uint64_t SFunction3 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    return static_cast<std::uint64_t>(11.0);
+  }
 
-  static std::uint64_t SFunction3 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4)  {return static_cast<std::uint64_t>(11.0);}
+  std::int8_t Function4 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    return static_cast<std::int8_t>(12.0);
+  }
 
-  std::int8_t Function4 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5)  {return static_cast<std::int8_t>(12.0);}
+  std::int8_t CFunction4 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5) const {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    return static_cast<std::int8_t>(13.0);
+  }
 
-  std::int8_t CFunction4 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5) const {return static_cast<std::int8_t>(13.0);}
+  static std::int8_t SFunction4 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    return static_cast<std::int8_t>(14.0);
+  }
 
-  static std::int8_t SFunction4 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5)  {return static_cast<std::int8_t>(14.0);}
+  std::int16_t Function5 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    return static_cast<std::int16_t>(15.0);
+  }
 
-  std::int16_t Function5 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6)  {return static_cast<std::int16_t>(15.0);}
+  std::int16_t CFunction5 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6) const {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    return static_cast<std::int16_t>(16.0);
+  }
 
-  std::int16_t CFunction5 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6) const {return static_cast<std::int16_t>(16.0);}
+  static std::int16_t SFunction5 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    return static_cast<std::int16_t>(17.0);
+  }
 
-  static std::int16_t SFunction5 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6)  {return static_cast<std::int16_t>(17.0);}
+  std::int32_t Function6 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    EXPECT_EQ(*arg7, 7);
+    return static_cast<std::int32_t>(18.0);
+  }
 
-  std::int32_t Function6 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7)  {return static_cast<std::int32_t>(18.0);}
+  std::int32_t CFunction6 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7) const {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    EXPECT_EQ(*arg7, 7);
+    return static_cast<std::int32_t>(19.0);
+  }
 
-  std::int32_t CFunction6 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7) const {return static_cast<std::int32_t>(19.0);}
+  static std::int32_t SFunction6 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    EXPECT_EQ(*arg7, 7);
+    return static_cast<std::int32_t>(20.0);
+  }
 
-  static std::int32_t SFunction6 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7)  {return static_cast<std::int32_t>(20.0);}
+  std::int64_t Function7 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    EXPECT_EQ(*arg7, 7);
+    EXPECT_EQ(arg8, 8);
+    return static_cast<std::int64_t>(21.0);
+  }
 
-  std::int64_t Function7 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8)  {return static_cast<std::int64_t>(21.0);}
+  std::int64_t CFunction7 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8) const {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    EXPECT_EQ(*arg7, 7);
+    EXPECT_EQ(arg8, 8);
+    return static_cast<std::int64_t>(22.0);
+  }
 
-  std::int64_t CFunction7 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8) const {return static_cast<std::int64_t>(22.0);}
+  static std::int64_t SFunction7 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    EXPECT_EQ(*arg7, 7);
+    EXPECT_EQ(arg8, 8);
+    return static_cast<std::int64_t>(23.0);
+  }
 
-  static std::int64_t SFunction7 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8)  {return static_cast<std::int64_t>(23.0);}
+  float Function8 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    EXPECT_EQ(*arg7, 7);
+    EXPECT_EQ(arg8, 8);
+    EXPECT_EQ(arg9, 9.0f);
+    return static_cast<float>(24.0);
+  }
 
-  float Function8 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9)  {return static_cast<float>(24.0);}
+  float CFunction8 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9) const {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    EXPECT_EQ(*arg7, 7);
+    EXPECT_EQ(arg8, 8);
+    EXPECT_EQ(arg9, 9.0f);
+    return static_cast<float>(25.0);
+  }
 
-  float CFunction8 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9) const {return static_cast<float>(25.0);}
+  static float SFunction8 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    EXPECT_EQ(*arg7, 7);
+    EXPECT_EQ(arg8, 8);
+    EXPECT_EQ(arg9, 9.0f);
+    return static_cast<float>(26.0);
+  }
 
-  static float SFunction8 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9)  {return static_cast<float>(26.0);}
+  double Function9 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9, const double& arg10) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    EXPECT_EQ(*arg7, 7);
+    EXPECT_EQ(arg8, 8);
+    EXPECT_EQ(arg9, 9.0f);
+    EXPECT_EQ(arg10, 10.0);
+    return static_cast<double>(27.0);
+  }
 
-  double Function9 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9, const double& arg10)  {return static_cast<double>(27.0);}
+  double CFunction9 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9, const double& arg10) const {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    EXPECT_EQ(*arg7, 7);
+    EXPECT_EQ(arg8, 8);
+    EXPECT_EQ(arg9, 9.0f);
+    EXPECT_EQ(arg10, 10.0);
+    return static_cast<double>(28.0);
+  }
 
-  double CFunction9 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9, const double& arg10) const {return static_cast<double>(28.0);}
+  static double SFunction9 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9, const double& arg10) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    EXPECT_EQ(*arg7, 7);
+    EXPECT_EQ(arg8, 8);
+    EXPECT_EQ(arg9, 9.0f);
+    EXPECT_EQ(arg10, 10.0);
+    return static_cast<double>(29.0);
+  }
 
-  static double SFunction9 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9, const double& arg10)  {return static_cast<double>(29.0);}
+  std::string Function10 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9, const double& arg10, const std::string& arg11) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    EXPECT_EQ(*arg7, 7);
+    EXPECT_EQ(arg8, 8);
+    EXPECT_EQ(arg9, 9.0f);
+    EXPECT_EQ(arg10, 10.0);
+    EXPECT_EQ(arg11, std::string("11"));
+    return "30.0";
+  }
 
-  std::string Function10 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9, const double& arg10, const std::string& arg11)  {return "30.0";}
+  std::string CFunction10 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9, const double& arg10, const std::string& arg11) const {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    EXPECT_EQ(*arg7, 7);
+    EXPECT_EQ(arg8, 8);
+    EXPECT_EQ(arg9, 9.0f);
+    EXPECT_EQ(arg10, 10.0);
+    EXPECT_EQ(arg11, std::string("11"));
+    return "31.0";
+  }
 
-  std::string CFunction10 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9, const double& arg10, const std::string& arg11) const {return "31.0";}
-
-  static std::string SFunction10 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9, const double& arg10, const std::string& arg11)  {return "32.0";}
+  static std::string SFunction10 (char arg1, const std::uint16_t& arg2, std::uint32_t& arg3, const std::uint64_t* const arg4, const std::int8_t* arg5, std::int16_t* const arg6, std::int32_t* arg7, std::int64_t arg8, const float arg9, const double& arg10, const std::string& arg11) {
+    EXPECT_EQ(arg1, 1);
+    EXPECT_EQ(arg2, 2);
+    EXPECT_EQ(arg3, 3);
+    EXPECT_EQ(*arg4, 4);
+    EXPECT_EQ(*arg5, 5);
+    EXPECT_EQ(*arg6, 6);
+    EXPECT_EQ(*arg7, 7);
+    EXPECT_EQ(arg8, 8);
+    EXPECT_EQ(arg9, 9.0f);
+    EXPECT_EQ(arg10, 10.0);
+    EXPECT_EQ(arg11, std::string("11"));
+    return "32.0";
+  }
 
   const std::string& GetStringData() {
     return string_data;
@@ -129,21 +392,21 @@ TEST(reflection, method) {
   Variable empty_variable{};
   Variable method_variable{Variable::EmplaceVariable<MethodTestClass>()};
 
-  std::uint64_t static_variable3 = 3;
-  std::int8_t static_variable4 = 4;
-  std::int16_t static_variable5 = 5;
-  std::int32_t static_variable6 = 6;
-  Variable variable0{Variable::EmplaceVariable<char>(0)};
-  Variable variable1{Variable::EmplaceVariable<std::uint16_t>(1)};
-  Variable variable2{Variable::EmplaceVariable<std::uint32_t>(2)};
+  std::uint64_t static_variable3 = 4;
+  std::int8_t static_variable4 = 5;
+  std::int16_t static_variable5 = 6;
+  std::int32_t static_variable6 = 7;
+  Variable variable0{Variable::EmplaceVariable<char>(1)};
+  Variable variable1{Variable::EmplaceVariable<std::uint16_t>(2)};
+  Variable variable2{Variable::EmplaceVariable<std::uint32_t>(3)};
   Variable variable3{Variable::EmplaceVariable<const std::uint64_t* const>(&static_variable3)};
   Variable variable4{Variable::EmplaceVariable<const std::int8_t*>(&static_variable4)};
   Variable variable5{Variable::EmplaceVariable<std::int16_t* const>(&static_variable5)};
   Variable variable6{Variable::EmplaceVariable<std::int32_t*>(&static_variable6)};
-  Variable variable7{Variable::EmplaceVariable<std::int64_t>(7)};
-  Variable variable8{Variable::EmplaceVariable<float>(8.0f)};
-  Variable variable9{Variable::EmplaceVariable<double>(9.0)};
-  Variable variable10{Variable::EmplaceVariable<std::string>("10.0")};
+  Variable variable7{Variable::EmplaceVariable<std::int64_t>(8)};
+  Variable variable8{Variable::EmplaceVariable<float>(9.0f)};
+  Variable variable9{Variable::EmplaceVariable<double>(10.0)};
+  Variable variable10{Variable::EmplaceVariable<std::string>("11")};
 
 
   const Meta* method_test_meta = GetMetaDatabase().at(typeid(MethodTestClass).hash_code());
