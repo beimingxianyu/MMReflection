@@ -556,6 +556,11 @@ class Variable {
   friend class PropertyWrapper;
   friend class Constructor;
   friend class Meta;
+  friend class SerializerBase;
+
+public:
+  struct WrapperObject;
+  using SmallObject = WrapperObject;
 
  public:
   /**
@@ -996,18 +1001,13 @@ class Variable {
    */
   void Destroy();
 
- private:
-  enum class VariableType {
-    INVALID,
-    SMALL_OBJECT,
-    PLACMENT_OBJECT,
-    COMMON_OBJECT
-  };
+  WrapperObject* GetWrapperObjectAddress();
 
-  // The small object is an object of 8 bytes or less, plus a virtual
+ public:
+  // The wrapper object is an object of 8 bytes or less, plus a virtual
   // function table pointer, resulting in a size of 16 bytes. To erase
   // type information, use this structure instead.
-  struct SmallObject {
+  struct WrapperObject {
     void* ptr1{nullptr};
     void* ptr2{nullptr};
 
@@ -1018,6 +1018,22 @@ class Variable {
     VariableWrapperBase* GetWrpperBasePtr() {
       return reinterpret_cast<VariableWrapperBase*>(this);
     }
+
+    void SetPtr1(void* ptr) {
+      ptr1 = ptr;
+    }
+
+    void SetPtr2(void* ptr) {
+      ptr2 = ptr;
+    }
+  };
+
+ private:
+  enum class VariableType {
+    INVALID,
+    SMALL_OBJECT,
+    PLACMENT_OBJECT,
+    COMMON_OBJECT
   };
 
   const VariableWrapperBase* GetWrapperBasePtr() const {

@@ -390,6 +390,8 @@ void MM::Reflection::Variable::Destroy() {
   }
 }
 
+MM::Reflection::Variable::WrapperObject* MM::Reflection::Variable::GetWrapperObjectAddress() { return &wrapper_.small_wrapper_; }
+
 bool MM::Reflection::VariableWrapperBase::IsVoid() const { return false; }
 
 bool MM::Reflection::VariableWrapperBase::IsRefrenceVariable() const {
