@@ -123,6 +123,12 @@ public:
     return *this;
   }
 
+  Class& SetSerializerName(const std::string& serializer_name) {
+    serializer_name_ = serializer_name;
+
+    return *this;
+  }
+
 private:
   static void SetEmptyObject(Meta& meta) {
       if constexpr (!std::is_same_v<ClassType_, void>) {
@@ -186,12 +192,16 @@ private:
       }
 
       SetEmptyObject(*old_meta);
+      if (old_meta->GetSerializerName() != serializer_name_) {
+        old_meta->SetSerializerName(serializer_name_);
+      }
 
       return;
     }
 
     // Register a new type.
     SetEmptyObject(meta_);
+    meta_.SetSerializerName(serializer_name_);
 
     auto name_to_hash_emplace_result = name_to_type_database.emplace(std::pair{meta_.GetTypeName(), meta_.GetType().GetTypeHashCode()});
     assert(name_to_hash_emplace_result.second);
@@ -229,7 +239,22 @@ private:
 
 private:
   Meta meta_;
+
+  std::string serializer_name_;
 };
+
+template<typename SerializerType>
+void RegisterSerializer() {
+  static_assert(std::is_base_of_v<SerializerBase, SerializerType>, "The registered serializer must inherit from MM::Reflection::SerializerBase.");
+
+  auto& serializer_database = GetSerializerDatabase();
+  SerializerType* new_serializer = new SerializerType{};
+  if (serializer_database.count(new_serializer->GetSerializerName()) != 0) {
+    return;
+  }
+
+  serializer_database.emplace(new_serializer->GetSerializerName(), new_serializer);
+}
 }  // namespace Reflection
 }  // namespace MM
 

@@ -30,6 +30,8 @@ public:
 
   void Release();
 
+  void Clear();
+
   void* GetData();
 
   const void* GetData() const;
@@ -40,12 +42,16 @@ public:
 
   [[nodiscard]] std::uint64_t GetAddDataOffset() const;
 
+  bool WriteToFile(const std::string& file_name) const;
+
+  bool LoadFromFile(const std::string& file_name, std::uint64_t offset = 0, std::uint64_t size = ~static_cast<std::uint64_t>(0x0LL));
+
  private:
   RowDataType* data_{nullptr};
   std::uint64_t capacity_{0};
 
-  mutable std::uint64_t read_data_offset{0};
-  std::uint64_t add_data_offset{0};
+  mutable std::uint64_t read_data_offset_{0};
+  std::uint64_t add_data_offset_{0};
 };
 
 }

@@ -25,7 +25,7 @@ void MM::Reflection::SerializerBase::WriteDescriptor(
       static_cast<std::uint32_t>(variable.GetMeta()->GetTypeName().size() + 1),
       custome_data_size, is_refrence};
   data_buffer.AddData(&descriptor, sizeof(SerializerDescriptor));
-  data_buffer.AddData(variable.GetType()->GetTypeName().c_str(),
+  data_buffer.AddData(variable.GetType()->GetOriginalTypeName().c_str(),
                       descriptor.c_style_type_name_size_);
   if (custom_data != nullptr) {
     assert(custome_data_size != 0);
@@ -61,10 +61,12 @@ void MM::Reflection::SerializerBase::PreProcessDescriptor(
   assert(meta.HaveSerializer() && meta.HaveEmptyObject());
   assert(!invalid_variable_refrence.IsValid());
 
+  Variable& empty_variable = meta.GetEmptyVariable();
+  Variable& empty_refrence_variable = meta.GetEmptyVariableRefrence();
   void* empty_object_vptr =
-      *reinterpret_cast<void**>(meta.GetEmptyVariable().GetWrapperBasePtr());
+      *reinterpret_cast<void**>(empty_variable.GetWrapperBasePtr());
   void* empty_refrence_object_vptr = *reinterpret_cast<void**>(
-      meta.GetEmptyVariableRefrence().GetWrapperBasePtr());
+      empty_refrence_variable.GetWrapperBasePtr());
 
   if (deserializer_info.is_refrence_) {
     if (deserializer_info.placement_address_) {
@@ -135,7 +137,7 @@ void MM::Reflection::SerializerBase::PreProcessDescriptor(
               << " | need_vptr_:" << std::boolalpha
               << deserializer_info.need_vptr_
               << " | placement_address:" << std::hex
-              << deserializer_info.placement_address_ << std::endl;
+              << deserializer_info.placement_address_ << '\n';
     assert(invalid_variable_refrence.IsValid());
   }
 }
@@ -144,17 +146,17 @@ bool MM::Reflection::TrivialSerializer::Check(const Meta& meta) const {
   if (!meta.HaveEmptyObject()) {
     std::cerr << "[Error] [MMReflection] The type named " << meta.GetTypeName()
               << " is not registered empty object to metadata,so the " << GetSerializerNameStatic()
-              << " serializer cannot be used.";
+              << " serializer cannot be used.\n";
     return false;
   }
   if (!meta.GetType().IsTrivial()) {
     std::cerr << "[Error] [MMReflection] The type named " << meta.GetTypeName()
               << " is not a trivial type, so the " << GetSerializerNameStatic()
-              << " serializer cannot be used.";
+              << " serializer cannot be used.\n";
     return false;
   }
 
-  return false;
+  return true;
 }
 
 MM::Reflection::DataBuffer& MM::Reflection::TrivialSerializer::Serialize(
@@ -196,7 +198,7 @@ bool MM::Reflection::RecursionSerializer::Check(const Meta& meta) const {
   if (!meta.HaveEmptyObject()) {
     std::cerr << "[Error] [MMReflection] The type named " << meta.GetTypeName()
               << " is not registered empty object to metadata,so the "
-              << GetSerializerNameStatic() << " serializer cannot be used.";
+              << GetSerializerNameStatic() << " serializer cannot be used.\n";
     return false;
   }
 
@@ -207,7 +209,7 @@ bool MM::Reflection::RecursionSerializer::Check(const Meta& meta) const {
       std::cerr << "[Error] [MMReflection] The property "
                 << property_ptr->GetPropertyName() << " of type "
                 << meta.GetTypeName() << " is not registered,so the "
-                << GetSerializerNameStatic() << " serializer cannot be used.";
+                << GetSerializerNameStatic() << " serializer cannot be used.\n";
 
       return false;
     }
@@ -218,7 +220,7 @@ bool MM::Reflection::RecursionSerializer::Check(const Meta& meta) const {
                 << property_meta->GetTypeName() << ")"
                 << " of type " << meta.GetTypeName()
                 << " is not registered serializer to metadata,so the "
-                << GetSerializerNameStatic() << " serializer cannot be used.";
+                << GetSerializerNameStatic() << " serializer cannot be used.\n";
       return false;
     }
   }
@@ -255,6 +257,8 @@ MM::Reflection::Variable MM::Reflection::RecursionSerializer::Deserialize(
   Variable variable{};
   PreProcessDescriptor(meta, variable, deserializer_info);
 
+  memcpy(variable.GetValue(), meta.GetEmptyVariable().GetValue(), meta.GetType().GetSize());
+
   ReadAllPropertyData(data_buffer, meta, variable);
 
   return variable;
@@ -290,12 +294,50 @@ void MM::Reflection::RecursionSerializer::ReadAllPropertyData(
     assert(serializer_iter != nullptr);
     const SerializerBase* serializer = serializer_iter->second;
 
+    assert(serializer_descriptor.is_refrence_ ==
+           property->GetType()->IsReference());
     DeserializerInfo property_deserializer_info{
         static_cast<char*>(variable.GetValue()) + property->GetPropertyOffset(),
-        property->GetType()->IsReference(), false};
+        serializer_descriptor.is_refrence_, false};
     Variable property_variable =
         variable.GetPropertyVariable(property->GetPropertyName());
+    // discard return value
     serializer->Deserialize(data_buffer, *property_meta,
                             property_deserializer_info);
   }
+}
+
+MM::Reflection::DataBuffer& MM::Reflection::Serialize(DataBuffer& data_buffer,
+                                                      Variable& variable) {
+  const Meta* meta = variable.GetMeta();
+  assert(meta != nullptr);
+  assert(meta->HaveSerializer());
+
+  const auto serializer_iter =
+      GetSerializerDatabase().find(meta->GetSerializerName());
+  assert(serializer_iter != nullptr);
+  const SerializerBase* serializer = serializer_iter->second;
+  return serializer->Serialize(data_buffer, variable);
+}
+
+MM::Reflection::Variable MM::Reflection::Deserialize(
+    const DataBuffer& data_buffer) {
+  const SerializerDescriptor serializer_descriptor =
+      SerializerBase::ReadDescriptor(data_buffer);
+  const std::string type_name = SerializerBase::ReadTypeName(
+      data_buffer, serializer_descriptor.c_style_type_name_size_);
+  auto type_hash_code_iter = GetNameToTypeHashDatabase().find(type_name);
+  assert(type_hash_code_iter != nullptr);
+  auto meta_iter = GetMetaDatabase().find(type_hash_code_iter->second);
+  assert(meta_iter != nullptr);
+  const Meta* meta = meta_iter->second;
+  assert(meta->HaveSerializer());
+  auto serializer_iter =
+      GetSerializerDatabase().find(meta->GetSerializerName());
+  assert(serializer_iter != nullptr);
+  const SerializerBase* serializer = serializer_iter->second;
+
+  DeserializerInfo deserializer_info{nullptr,
+                                     serializer_descriptor.is_refrence_, false};
+  return serializer->Deserialize(data_buffer, *meta, deserializer_info);
 }

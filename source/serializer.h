@@ -20,6 +20,8 @@ struct DeserializerInfo {
 };
 
 class SerializerBase {
+  friend Variable Deserialize(const DataBuffer& data_buffer);
+
 public:
   SerializerBase() = default;
   virtual ~SerializerBase() = default;
@@ -98,5 +100,9 @@ private:
   static void ReadAllPropertyData(const DataBuffer& data_buffer,
                                  const Meta& meta, Variable& variable);
 };
+
+DataBuffer& Serialize(DataBuffer& data_buffer, Variable& variable);
+
+Variable Deserialize(const DataBuffer& data_buffer);
 }  // namespace Reflection
 }  // namespace MM
