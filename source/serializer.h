@@ -50,6 +50,8 @@ protected:
                        const void* custom_data,
                        std::uint32_t custome_data_size) const ;
 
+  static void* GetVariableValuePtr(Variable& variable);
+
   static SerializerDescriptor ReadDescriptor(const DataBuffer& data_buffer);
 
   static std::string ReadTypeName(const DataBuffer& data_buffer, std::uint64_t size);
@@ -79,10 +81,10 @@ public:
  static const std::string& GetSerializerNameStatic();
 };
 
-class RecursionSerializer final : public SerializerBase {
+class UnsefeRecursionSerializer: public SerializerBase {
 public:
- RecursionSerializer() = default;
- ~RecursionSerializer() override = default;
+ UnsefeRecursionSerializer() = default;
+ ~UnsefeRecursionSerializer() override = default;
 
  bool Check(const Meta& meta) const override;
 
@@ -99,6 +101,18 @@ public:
 private:
   static void ReadAllPropertyData(const DataBuffer& data_buffer,
                                  const Meta& meta, Variable& variable);
+};
+
+class RecursionSerializer final : public UnsefeRecursionSerializer {
+public:
+ RecursionSerializer() = default;
+ ~RecursionSerializer() override = default;
+
+ bool Check(const Meta& meta) const override;
+
+ const std::string& GetSerializerName() const override;
+
+ static const std::string& GetSerializerNameStatic();
 };
 
 DataBuffer& Serialize(DataBuffer& data_buffer, Variable& variable);

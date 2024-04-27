@@ -16,9 +16,10 @@ const std::string& MM::Reflection::SerializerBase::GetSerializerNameStatic() {
 void MM::Reflection::SerializerBase::WriteDescriptor(
     DataBuffer& data_buffer, const Variable& variable, const void* custom_data,
     const std::uint32_t custome_data_size) const {
-  const bool is_refrence = variable.IsPropertyVariable()
-                               ? variable.GetPropertyRealType()->IsReference()
-                               : variable.IsRefrenceVariable();
+  bool is_refrence = variable.IsPropertyVariable()
+                         ? (variable.GetPropertyRealType()->IsReference() ||
+                            variable.GetPropertyRealType()->IsPointer())
+                         : variable.IsRefrenceVariable();
 
   const SerializerDescriptor descriptor{
       GetVersion(),
@@ -30,6 +31,16 @@ void MM::Reflection::SerializerBase::WriteDescriptor(
   if (custom_data != nullptr) {
     assert(custome_data_size != 0);
     data_buffer.AddData(custom_data, custome_data_size);
+  }
+}
+
+void* MM::Reflection::SerializerBase::GetVariableValuePtr(Variable& variable) {
+  if (bool is_pointer = variable.IsPropertyVariable()
+                            ? variable.GetPropertyRealType()->IsPointer()
+                            : variable.GetType()->IsPointer()) {
+    return variable.GetValueCast<void*>();
+  } else {
+    return variable.GetValue();
   }
 }
 
@@ -165,7 +176,7 @@ MM::Reflection::DataBuffer& MM::Reflection::TrivialSerializer::Serialize(
 
   WriteDescriptor(data_buffer, variable, nullptr, 0);
 
-  data_buffer.AddData(variable.GetValue(),
+  data_buffer.AddData(GetVariableValuePtr(variable),
                       variable.GetMeta()->GetType().GetSize());
 
   return data_buffer;
@@ -194,7 +205,7 @@ MM::Reflection::TrivialSerializer::GetSerializerNameStatic() {
   return serializer_name;
 }
 
-bool MM::Reflection::RecursionSerializer::Check(const Meta& meta) const {
+bool MM::Reflection::UnsefeRecursionSerializer::Check(const Meta& meta) const {
   if (!meta.HaveEmptyObject()) {
     std::cerr << "[Error] [MMReflection] The type named " << meta.GetTypeName()
               << " is not registered empty object to metadata,so the "
@@ -204,7 +215,11 @@ bool MM::Reflection::RecursionSerializer::Check(const Meta& meta) const {
 
   for (const auto* property_ptr : meta.GetAllProperty()) {
     assert(property_ptr != nullptr);
-    const Meta* property_meta = property_ptr->GetMate();
+    if (property_ptr->IsStatic()) {
+      continue;
+    }
+
+    const Meta* property_meta = property_ptr->GetMeta();
     if (property_meta == nullptr) {
       std::cerr << "[Error] [MMReflection] The property "
                 << property_ptr->GetPropertyName() << " of type "
@@ -228,7 +243,7 @@ bool MM::Reflection::RecursionSerializer::Check(const Meta& meta) const {
   return true;
 }
 
-MM::Reflection::DataBuffer& MM::Reflection::RecursionSerializer::Serialize(
+MM::Reflection::DataBuffer& MM::Reflection::UnsefeRecursionSerializer::Serialize(
     DataBuffer& data_buffer, Variable& variable) const {
   assert(GetSerializerName() == variable.GetMeta()->GetSerializerName());
 
@@ -236,6 +251,9 @@ MM::Reflection::DataBuffer& MM::Reflection::RecursionSerializer::Serialize(
 
   auto& serializer_database = GetSerializerDatabase();
   for (const auto* property : variable.GetMeta()->GetAllProperty()) {
+    if (property->IsStatic()) {
+      continue;
+    }
     Variable property_variable =
         variable.GetPropertyVariable(property->GetPropertyName());
     assert(property_variable.GetMeta()->HaveSerializer());
@@ -249,7 +267,7 @@ MM::Reflection::DataBuffer& MM::Reflection::RecursionSerializer::Serialize(
   return data_buffer;
 }
 
-MM::Reflection::Variable MM::Reflection::RecursionSerializer::Deserialize(
+MM::Reflection::Variable MM::Reflection::UnsefeRecursionSerializer::Deserialize(
     const DataBuffer& data_buffer, const Meta& meta,
     const DeserializerInfo& deserializer_info) const {
   assert(GetSerializerName() == meta.GetSerializerName());
@@ -264,21 +282,25 @@ MM::Reflection::Variable MM::Reflection::RecursionSerializer::Deserialize(
   return variable;
 }
 
-const std::string& MM::Reflection::RecursionSerializer::GetSerializerName()
+const std::string& MM::Reflection::UnsefeRecursionSerializer::GetSerializerName()
     const {
   return GetSerializerNameStatic();
 }
 
 const std::string&
-MM::Reflection::RecursionSerializer::GetSerializerNameStatic() {
-  static std::string serializer_name{"Recursion"};
+MM::Reflection::UnsefeRecursionSerializer::GetSerializerNameStatic() {
+  static std::string serializer_name{"UnsafeRecursion"};
 
   return serializer_name;
 }
 
-void MM::Reflection::RecursionSerializer::ReadAllPropertyData(
+void MM::Reflection::UnsefeRecursionSerializer::ReadAllPropertyData(
     const DataBuffer& data_buffer, const Meta& meta, Variable& variable) {
   for (const Property* property : meta.GetAllProperty()) {
+    if (property->IsStatic()) {
+      continue;
+    }
+
     const SerializerDescriptor serializer_descriptor =
         ReadDescriptor(data_buffer);
     const std::string type_name = ReadTypeName(
@@ -305,6 +327,42 @@ void MM::Reflection::RecursionSerializer::ReadAllPropertyData(
     serializer->Deserialize(data_buffer, *property_meta,
                             property_deserializer_info);
   }
+}
+
+bool MM::Reflection::RecursionSerializer::Check(const Meta& meta) const {
+  if (UnsefeRecursionSerializer::Check(meta)) {
+    return false;
+  }
+
+  for (const auto* property_ptr : meta.GetAllProperty()) {
+    assert(property_ptr != nullptr);
+    if (property_ptr->IsStatic()) {
+      continue;
+    }
+
+    if (property_ptr->GetType()->IsReference()) {
+      std::cerr << "[Error] [MMReflection] The property "
+                << property_ptr->GetPropertyName() << " of type "
+                << meta.GetTypeName() << " is a refrence property,so the "
+                << GetSerializerNameStatic() << " serializer cannot be used.\n";
+
+      return false;
+    }
+  }
+
+  return true;
+}
+
+const std::string& MM::Reflection::RecursionSerializer::GetSerializerName()
+    const {
+  return GetSerializerNameStatic();
+}
+
+const std::string&
+MM::Reflection::RecursionSerializer::GetSerializerNameStatic() {
+  static std::string serializer_name{"UnsafeRecursion"};
+
+  return serializer_name;
 }
 
 MM::Reflection::DataBuffer& MM::Reflection::Serialize(DataBuffer& data_buffer,

@@ -344,13 +344,13 @@ class StaticRefrencePropertyWrapper
 
 template<typename PropertyType>
 struct RefrencePropertyDescriptor {
-  using Type = PropertyType;
+  using Type = std::add_lvalue_reference_t<std::remove_reference_t<PropertyType>>;
   std::uint64_t offset_;
 };
 
 template<typename PropertyType>
 struct StaticRefrencePropertyDescriptor {
-  using Type = PropertyType;
+  using Type = std::add_lvalue_reference_t<std::remove_reference_t<PropertyType>>;
   using ValueType = std::remove_reference_t<PropertyType>;
   ValueType* address_;
 };
@@ -434,7 +434,7 @@ class Property {
    * \remark If the type is not registered or this object is invalid, the empty
    * std::weak_ptr will be returned.
    */
-  const Meta* GetMate() const;
+  const Meta* GetMeta() const;
 
   /**
    * \brief Get class meta data.

@@ -85,7 +85,7 @@ void MM::Reflection::DataBuffer::Reserver(std::uint64_t new_size) {
 }
 
 void MM::Reflection::DataBuffer::Release() {
-  delete data_;
+  delete[] data_;
 
   data_ = nullptr;
   capacity_ = 0;

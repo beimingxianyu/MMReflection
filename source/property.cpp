@@ -34,7 +34,7 @@ const MM::Reflection::Type* MM::Reflection::Property::GetClassType() const {
 
   return property_wrapper_->GetClassType();
 }
-const MM::Reflection::Meta* MM::Reflection::Property::GetMate() const {
+const MM::Reflection::Meta* MM::Reflection::Property::GetMeta() const {
   if (!IsValid()) {
     return nullptr;
   }

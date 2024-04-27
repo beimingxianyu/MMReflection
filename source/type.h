@@ -150,6 +150,7 @@ class TypeWrapperBase {
    */
   virtual const Meta* GetMeta() const {return nullptr;}
 
+  virtual std::unique_ptr<TypeWrapperBase> GetOriginalType() const {return nullptr;}
 };
 
 template <typename TypeName>
@@ -174,7 +175,7 @@ class TypeWrapper final : public TypeWrapperBase {
    * false.
    */
   bool IsRegistered() const override {
-    return GetMetaDatabase().find(GetTypeHashCode()) != GetMetaDatabase().end();
+    return GetMetaDatabase().find(GetOriginalTypeHashCode()) != GetMetaDatabase().end();
   }
 
   /**
@@ -373,6 +374,10 @@ class TypeWrapper final : public TypeWrapperBase {
     }
     return GetMetaDatabase().at(GetOriginalTypeHashCode());
   }
+
+  std::unique_ptr<TypeWrapperBase> GetOriginalType() const override {
+   return std::make_unique<TypeWrapper<Utils::GetOriginalTypeT<TypeName>>>();
+  }
 };
 
 template<>
@@ -509,6 +514,10 @@ public:
    * \remark If the type is not registered, the nullptr will be returned.
    */
   const Meta* GetMeta() const override;
+
+  std::unique_ptr<TypeWrapperBase> GetOriginalType() const override {
+   return std::make_unique<TypeWrapper<void>>();
+  }
 };
 
 class Type {
@@ -721,6 +730,8 @@ class Type {
    * nullptr will be returned.
    */
   const Meta* GetMeta() const;
+
+  const Type& GetOrignalType() const;
 
  private:
   std::unique_ptr<TypeWrapperBase> type_wrapper_ = nullptr;

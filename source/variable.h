@@ -166,9 +166,9 @@ class VariableWrapper final : public VariableWrapperBase {
     return *this;
   }
 
-  explicit VariableWrapper(VariableType_&& other) : value_(std::move(other)) {}
-
-  explicit VariableWrapper(const VariableType_& other) : value_(other) {}
+  // explicit VariableWrapper(VariableType_&& other) : value_(std::move(other)) {}
+  //
+  // explicit VariableWrapper(const VariableType_& other) : value_(other) {}
 
   template <typename... Args>
   explicit VariableWrapper(Args... args)
@@ -634,18 +634,24 @@ public:
       new (small_object_address) VariableRefrenceWrapper<VariableType>{other};
       return variable;
     }
-    if constexpr (sizeof(VariableType) <= sizeof(SmallObject) - sizeof(void*)) {
-      Variable variable{};
-      variable.variable_type_ = Variable::VariableType::SMALL_OBJECT;
-      void* small_object_address = &variable.wrapper_.small_wrapper_;
-      new (small_object_address)
-          VariableWrapper<std::remove_reference_t<VariableType>>{
-              std::forward<VariableType>(other)};
-      return variable;
-    }
+    if constexpr (std::is_rvalue_reference_v<VariableType> && !std::is_move_constructible_v<std::remove_reference_t<VariableType>>) {
+      return Variable{};
+    } else if constexpr (std::is_lvalue_reference_v<VariableType> && !std::is_copy_constructible_v<std::remove_reference_t<VariableType>>) {
+      return Variable{};
+    } else {
+      if constexpr (sizeof(VariableType) <= sizeof(SmallObject) - sizeof(void*)) {
+        Variable variable{};
+        variable.variable_type_ = Variable::VariableType::SMALL_OBJECT;
+        void* small_object_address = &variable.wrapper_.small_wrapper_;
+        new (small_object_address)
+            VariableWrapper<std::remove_reference_t<VariableType>>{
+                std::forward<VariableType>(other)};
+        return variable;
+      }
 
-    return Variable{new VariableWrapper<std::remove_reference_t<VariableType>>{
-        std::forward<VariableType>(other)}};
+      return Variable{new VariableWrapper<std::remove_reference_t<VariableType>>{
+          std::forward<VariableType>(other)}};
+    }
   }
 
   template <typename VariableType, typename... Args>
@@ -681,11 +687,16 @@ public:
           new (address) VariableRefrenceWrapper<VariableType>(other);
       return Variable{wrapper, true};
     }
-
-    VariableWrapper<std::remove_reference_t<VariableType>>* wrapper =
-        new (address) VariableWrapper<std::remove_reference_t<VariableType>>(
-            std::forward<VariableType>(other));
-    return Variable{wrapper, true};
+    if constexpr (std::is_rvalue_reference_v<VariableType> && !std::is_move_constructible_v<std::remove_reference_t<VariableType>>) {
+      return VariableType{};
+    } else if constexpr (std::is_lvalue_reference_v<VariableType> && !std::is_copy_constructible_v<std::remove_reference_t<VariableType>>) {
+      return VariableType{};
+    } else {
+      VariableWrapper<std::remove_reference_t<VariableType>>* wrapper =
+          new (address) VariableWrapper<std::remove_reference_t<VariableType>>(
+              std::forward<VariableType>(other));
+      return Variable{wrapper, true};
+    }
   }
 
   template <typename VariableType, typename... Args>

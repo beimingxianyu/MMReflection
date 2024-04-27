@@ -49,6 +49,9 @@ std::string GetEmptyStringObject() {
 }
 
 MM_REGISTER {
+  MM::Reflection::RegisterSerializer<MM::Reflection::TrivialSerializer>();
+  MM::Reflection::RegisterSerializer<MM::Reflection::UnsefeRecursionSerializer>();
+
   MM::Reflection::Class<void>{"void"};
 
   MM::Reflection::Class<char>{"char"}
@@ -115,7 +118,4 @@ MM_REGISTER {
     .Constructor<>("Empty")
     .Constructor<std::string>("Init")
     .Method(MM::Reflection::Meta::GetEmptyObjectMethodName(), &MM::Reflection::GetEmptyStringObject);
-
-  MM::Reflection::RegisterSerializer<MM::Reflection::TrivialSerializer>();
-  MM::Reflection::RegisterSerializer<MM::Reflection::RecursionSerializer>();
 }
