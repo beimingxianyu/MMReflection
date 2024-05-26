@@ -218,6 +218,24 @@ const MM::Reflection::Meta* MM::Reflection::Type::GetMeta() const {
   return type_wrapper_->GetMeta();
 }
 
+const MM::Reflection::Type& MM::Reflection::Type::GetOrignalType() const {
+  if (GetOriginalTypeHashCode() == GetTypeHashCode()) {
+    return *this;
+  } else {
+    TypeID type_id{GetOriginalTypeHashCode(), false, false};
+    auto& type_database = GetTypeDatabase();
+    std::unordered_map<TypeID, const Type*>::iterator find_result =
+        type_database.find(type_id);
+    if (find_result == type_database.end()) {
+      auto emplace_result = type_database.emplace(
+          std::make_pair(type_id, new Type{type_wrapper_->GetOriginalType()}));
+      assert(emplace_result.second);
+      find_result = emplace_result.first;
+    }
+    return *find_result->second;
+  }
+}
+
 MM::Reflection::TypeID MM::Reflection::Type::GetTypeID() const {
   if (!IsValid()) {
     return TypeID{};

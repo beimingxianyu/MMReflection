@@ -170,6 +170,17 @@ const MM::Reflection::Type* MM::Reflection::Variable::GetType() const {
   return wrapper_base_ptr->GetType();
 }
 
+const MM::Reflection::Type* MM::Reflection::Variable::GetPropertyRealType()
+    const {
+  if (!IsValid()) {
+    return &EmptyType;
+  }
+
+  const VariableWrapperBase* wrapper_base_ptr = GetWrapperBasePtr();
+  assert(wrapper_base_ptr != nullptr);
+  return wrapper_base_ptr->GetPropertyRealType();
+}
+
 const MM::Reflection::Meta* MM::Reflection::Variable::
 GetMeta() const {
   if (!IsValid()) {
@@ -364,6 +375,7 @@ void* MM::Reflection::Variable::ReleaseOwnership() {
       variable_type_ = VariableType::INVALID;
       return result;
     default:
+      variable_type_ = VariableType::INVALID;
       return nullptr;
   }
 }
@@ -387,6 +399,82 @@ void MM::Reflection::Variable::Destroy() {
       break;
     default:
       break;
+  }
+}
+
+MM::Reflection::Variable::WrapperObject*
+MM::Reflection::Variable::GetWrapperObjectAddress() {
+  return &wrapper_.small_wrapper_;
+}
+
+MM::Reflection::Variable
+MM::Reflection::Variable::PointerVariableToRefrenceVariable(
+    bool compatible_pointer_refrence) {
+  VariableWrapperBase* wrapper_base_ptr = GetWrapperBasePtr();
+  Variable new_variable{};
+  VariableWrapperBase* result =
+      wrapper_base_ptr->PointerVariableToRefrenceVariable(
+          reinterpret_cast<VariableWrapperBase*>(new_variable.GetWrapperObjectAddress()), compatible_pointer_refrence);
+  if (result != nullptr) {
+    new_variable.variable_type_ = VariableType::SMALL_OBJECT;
+  }
+  return new_variable;
+}
+
+MM::Reflection::Variable
+MM::Reflection::Variable::PointerVariableToRefrenceVariable(
+    bool compatible_pointer_refrence) const {
+  const VariableWrapperBase* wrapper_base_ptr = GetWrapperBasePtr();
+  Variable new_variable{};
+  VariableWrapperBase* result =
+      wrapper_base_ptr->PointerVariableToRefrenceVariable(
+          reinterpret_cast<VariableWrapperBase*>(new_variable.GetWrapperObjectAddress()), compatible_pointer_refrence);
+  if (result != nullptr) {
+    new_variable.variable_type_ = VariableType::SMALL_OBJECT;
+  }
+
+  return new_variable;
+}
+
+const MM::Reflection::VariableWrapperBase*
+MM::Reflection::Variable::WrapperObject::GetWrpperBasePtr() const {
+  return reinterpret_cast<const VariableWrapperBase*>(this);
+}
+
+MM::Reflection::VariableWrapperBase*
+MM::Reflection::Variable::WrapperObject::GetWrpperBasePtr() {
+  return reinterpret_cast<VariableWrapperBase*>(this);
+}
+
+void MM::Reflection::Variable::WrapperObject::SetPtr1(void* ptr) { ptr1 = ptr; }
+
+void MM::Reflection::Variable::WrapperObject::SetPtr2(void* ptr) { ptr2 = ptr; }
+
+const MM::Reflection::VariableWrapperBase*
+MM::Reflection::Variable::GetWrapperBasePtr() const {
+  switch (variable_type_) {
+    case VariableType::SMALL_OBJECT:
+      return wrapper_.small_wrapper_.GetWrpperBasePtr();
+    case VariableType::COMMON_OBJECT:
+      return wrapper_.common_wrapper_;
+    case VariableType::PLACMENT_OBJECT:
+      return wrapper_.placement_wrapper_;
+    default:
+      return nullptr;
+  }
+}
+
+MM::Reflection::VariableWrapperBase*
+MM::Reflection::Variable::GetWrapperBasePtr() {
+  switch (variable_type_) {
+    case VariableType::SMALL_OBJECT:
+      return wrapper_.small_wrapper_.GetWrpperBasePtr();
+    case VariableType::COMMON_OBJECT:
+      return wrapper_.common_wrapper_;
+    case VariableType::PLACMENT_OBJECT:
+      return wrapper_.placement_wrapper_;
+    default:
+      return nullptr;
   }
 }
 
@@ -430,12 +518,6 @@ bool MM::Reflection::VariableWrapperBase::MoveValue(void*) {
   return false;
 }
 
-MM::Reflection::Variable
-MM::Reflection::VariableWrapperBase::GetPropertyVariable(
-    const std::string&) const {
-  return Variable{};
-}
-
 const MM::Reflection::Type* MM::Reflection::VariableWrapperBase::GetType()
     const {
   return nullptr;
@@ -448,6 +530,18 @@ MM::Reflection::VariableWrapperBase::GetPropertyRealType() const {
 
 const MM::Reflection::Meta* MM::Reflection::VariableWrapperBase::GetMeta()
     const {
+  return nullptr;
+}
+
+MM::Reflection::VariableWrapperBase*
+MM::Reflection::VariableWrapperBase::PointerVariableToRefrenceVariable(
+    VariableWrapperBase* placement, bool compatible_pointer_refrence) {
+  return nullptr;
+}
+
+MM::Reflection::VariableWrapperBase*
+MM::Reflection::VariableWrapperBase::PointerVariableToRefrenceVariable(
+    VariableWrapperBase* placement, bool compatible_pointer_refrence) const {
   return nullptr;
 }
 

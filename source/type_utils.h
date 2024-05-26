@@ -285,8 +285,8 @@ struct DoNothingDestructor {
  */
 template <typename TypeName>
 struct GetOriginalType {
-  using Type = std::remove_const_t<std::remove_reference_t<
-      std::remove_pointer_t<std::remove_all_extents_t<TypeName>>>>;
+  using Type = std::remove_const_t<std::remove_pointer_t<
+      std::remove_reference_t<std::remove_all_extents_t<TypeName>>>>;
 };
 
 template <typename TypeName>

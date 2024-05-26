@@ -16,7 +16,8 @@ MM::Reflection::Meta::Meta(Meta&& other) noexcept
       type_(std::move(other.type_)),
       constructors_(std::move(other.constructors_)),
       methods_(std::move(other.methods_)),
-      properties_(std::move(other.properties_)) {
+      properties_(std::move(other.properties_)),
+      serializer_name_(std::move(other.serializer_name_)){
   empty_variable_ = std::move(other.empty_variable_);
   empty_variable_refrence_ = std::move(other.empty_variable_refrence_);
   empty_variable_const_refrence_ =
