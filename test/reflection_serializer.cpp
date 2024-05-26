@@ -167,7 +167,7 @@ public:
            lhs.property5_ == rhs.property5_;
   }
 
- private:
+ public:
   int property1_;
   double property2_;
   float property3_;
@@ -471,8 +471,8 @@ MM_REGISTER {
       .SetSerializerName(UnsefeRecursionSerializer::GetSerializerNameStatic());
   Class<RecursionSubClass5>{"RecursionSubClass5"}
       .Property("property1_", RefrencePropertyDescriptor<RecursionSubClass1>{8})
-      .Property("property2_", RefrencePropertyDescriptor<RecursionSubClass1>{16})
-      .Property("property3_", RefrencePropertyDescriptor<RecursionSubClass1>{24})
+      .Property("property2_", RefrencePropertyDescriptor<RecursionSubClass2>{16})
+      .Property("property3_", RefrencePropertyDescriptor<RecursionSubClass3>{24})
       .Method(Meta::GetEmptyObjectMethodName(),
               &GetEmptyObject<RecursionSubClass5>)
       .SetSerializerName(UnsefeRecursionSerializer::GetSerializerNameStatic());
@@ -486,21 +486,40 @@ MM_REGISTER {
       .SetSerializerName(UnsefeRecursionSerializer::GetSerializerNameStatic());
 }
 
-
 TEST(reflection, serialize) {
+  // ------------------------- TrivialSerializer ------------------------------
   TrivialStruct test_trivial_struct{};
   RandomBit(reinterpret_cast<char*>(&test_trivial_struct), sizeof(TrivialStruct));
 
   Variable trivial_variable_refrence = Variable::CreateVariable(test_trivial_struct);
-  DataBuffer data_buffer{};
-  Serialize(data_buffer, trivial_variable_refrence);
-  ASSERT_EQ(data_buffer.WriteToFile("./trivial_variable_refrence.bin"), true);
-  data_buffer.Clear();
-  ASSERT_EQ(data_buffer.LoadFromFile("./trivial_variable_refrence.bin"), true);
-  Variable trivial_variable_refrence_deserialize = Deserialize(data_buffer);
+  DataBuffer data_buffer_trivial{};
+  Serialize(data_buffer_trivial, trivial_variable_refrence);
+  ASSERT_EQ(data_buffer_trivial.WriteToFile("./trivial_variable_refrence.bin"), true);
+  data_buffer_trivial.Clear();
+  ASSERT_EQ(data_buffer_trivial.LoadFromFile("./trivial_variable_refrence.bin"), true);
+  Variable trivial_variable_refrence_deserialize = Deserialize(data_buffer_trivial);
   ASSERT_EQ(trivial_variable_refrence_deserialize.IsValid(), true);
   ASSERT_EQ(trivial_variable_refrence_deserialize.IsRefrenceVariable(), true);
   ASSERT_EQ(trivial_variable_refrence_deserialize.GetType()->GetOriginalTypeHashCode(), typeid(TrivialStruct).hash_code());
   ASSERT_EQ(*static_cast<TrivialStruct*>(trivial_variable_refrence.GetValue()), *static_cast<TrivialStruct*>(trivial_variable_refrence_deserialize.GetValue()));
   free(trivial_variable_refrence_deserialize.GetValue());
+
+  // ------------------------- RecurisionSerializer -------------------------
+  RecursionClass recursion_class{};
+  recursion_class.RandomData();
+  Variable recursion_class_refrence = Variable::CreateVariable(recursion_class);
+  DataBuffer data_buffer_recursion{};
+  Meta* meta = GetMetaDatabase().at(typeid(RecursionSubClass5).hash_code());
+  const Property* p = meta->GetProperty("property3_");
+  bool a = p->GetType()->IsReference();
+  Serialize(data_buffer_recursion, recursion_class_refrence);
+  ASSERT_EQ(data_buffer_recursion.WriteToFile("./recursion_class_refrence.bin"), true);
+  data_buffer_recursion.Clear();
+  ASSERT_EQ(data_buffer_recursion.LoadFromFile("./recursion_class_refrence.bin"), true);
+  Variable recursion_class_refrence_deserialize = Deserialize(data_buffer_recursion);
+  ASSERT_EQ(recursion_class_refrence_deserialize.IsValid(), true);
+  ASSERT_EQ(recursion_class_refrence_deserialize.IsRefrenceVariable(), true);
+  ASSERT_EQ(recursion_class_refrence_deserialize.GetType()->GetOriginalTypeHashCode(), typeid(RecursionClass).hash_code());
+  ASSERT_EQ(*static_cast<RecursionClass*>(recursion_class_refrence.GetValue()), *static_cast<RecursionClass*>(recursion_class_refrence_deserialize.GetValue()));
+  free(recursion_class_refrence_deserialize.GetValue());
 }

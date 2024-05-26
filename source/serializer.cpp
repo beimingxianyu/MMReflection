@@ -35,9 +35,9 @@ void MM::Reflection::SerializerBase::WriteDescriptor(
 }
 
 void* MM::Reflection::SerializerBase::GetVariableValuePtr(Variable& variable) {
-  if (bool is_pointer = variable.IsPropertyVariable()
-                            ? variable.GetPropertyRealType()->IsPointer()
-                            : variable.GetType()->IsPointer()) {
+  if (variable.IsPropertyVariable()
+          ? variable.GetPropertyRealType()->IsPointer()
+          : variable.GetType()->IsPointer()) {
     return variable.GetValueCast<void*>();
   } else {
     return variable.GetValue();
@@ -80,10 +80,10 @@ void MM::Reflection::SerializerBase::PreProcessDescriptor(
       empty_refrence_variable.GetWrapperBasePtr());
 
   if (deserializer_info.is_refrence_) {
+    void* refrence_ptr = malloc(meta.GetType().GetSize());
+
     if (deserializer_info.placement_address_) {
       if (deserializer_info.need_vptr_) {
-        void* refrence_ptr = malloc(meta.GetType().GetSize());
-
         auto* wrapper_ptr = static_cast<Variable::WrapperObject*>(
             deserializer_info.placement_address_);
         wrapper_ptr->SetPtr1(empty_refrence_object_vptr);
@@ -98,14 +98,14 @@ void MM::Reflection::SerializerBase::PreProcessDescriptor(
         Variable::WrapperObject* wrapper_ptr =
             invalid_variable_refrence.GetWrapperObjectAddress();
         wrapper_ptr->SetPtr1(empty_refrence_object_vptr);
-        wrapper_ptr->SetPtr2(deserializer_info.placement_address_);
+        wrapper_ptr->SetPtr2(refrence_ptr);
+
+        *static_cast<void**>(deserializer_info.placement_address_) = refrence_ptr;
 
         invalid_variable_refrence.variable_type_ =
             Variable::VariableType::SMALL_OBJECT;
       }
     } else {
-      void* refrence_ptr = malloc(meta.GetType().GetSize());
-
       Variable::WrapperObject* wrapper_ptr =
           invalid_variable_refrence.GetWrapperObjectAddress();
       wrapper_ptr->SetPtr1(empty_refrence_object_vptr);
@@ -125,13 +125,21 @@ void MM::Reflection::SerializerBase::PreProcessDescriptor(
                 deserializer_info.placement_address_);
         invalid_variable_refrence.variable_type_ =
             Variable::VariableType::PLACMENT_OBJECT;
+      } else {
+        Variable::WrapperObject* wrapper_ptr =
+            invalid_variable_refrence.GetWrapperObjectAddress();
+        wrapper_ptr->SetPtr1(empty_refrence_object_vptr);
+        wrapper_ptr->SetPtr2(deserializer_info.placement_address_);
+
+        invalid_variable_refrence.variable_type_ =
+            Variable::VariableType::SMALL_OBJECT;
       }
     } else {
       // use small object optimize
       std::uint64_t type_size = meta.GetType().GetSize();
       if (type_size <= sizeof(void*)) {
         invalid_variable_refrence.wrapper_.small_wrapper_.ptr1 = empty_object_vptr;
-        invalid_variable_refrence.variable_type_ = Variable::VariableType::COMMON_OBJECT;
+        invalid_variable_refrence.variable_type_ = Variable::VariableType::SMALL_OBJECT;
       } else {
         VariableWrapperBase* wrapper_ptr = static_cast<VariableWrapperBase*>(
             malloc(GetVariableWrpperSize(type_size)));
@@ -261,7 +269,13 @@ MM::Reflection::DataBuffer& MM::Reflection::UnsefeRecursionSerializer::Serialize
         property_variable.GetMeta()->GetSerializerName());
     assert(serializer_iter != nullptr);
     const SerializerBase* serializer = serializer_iter->second;
-    serializer->Serialize(data_buffer, property_variable);
+    if (property_variable.GetPropertyRealType()->IsPointer()) {
+      Variable new_refrence_variable = property_variable.PointerVariableToRefrenceVariable(true);
+      assert(new_refrence_variable.IsValid());
+      serializer->Serialize(data_buffer, new_refrence_variable);
+    } else {
+      serializer->Serialize(data_buffer, property_variable);
+    }
   }
 
   return data_buffer;
@@ -317,20 +331,18 @@ void MM::Reflection::UnsefeRecursionSerializer::ReadAllPropertyData(
     const SerializerBase* serializer = serializer_iter->second;
 
     assert(serializer_descriptor.is_refrence_ ==
-           property->GetType()->IsReference());
+           (property->GetType()->IsReference() || property->GetType()->IsPointer()));
     DeserializerInfo property_deserializer_info{
         static_cast<char*>(variable.GetValue()) + property->GetPropertyOffset(),
         serializer_descriptor.is_refrence_, false};
-    Variable property_variable =
-        variable.GetPropertyVariable(property->GetPropertyName());
-    // discard return value
-    serializer->Deserialize(data_buffer, *property_meta,
-                            property_deserializer_info);
+    Variable property_variable = serializer->Deserialize(
+        data_buffer, *property_meta, property_deserializer_info);
+    property_variable.ReleaseOwnership();
   }
 }
 
 bool MM::Reflection::RecursionSerializer::Check(const Meta& meta) const {
-  if (UnsefeRecursionSerializer::Check(meta)) {
+  if (!UnsefeRecursionSerializer::Check(meta)) {
     return false;
   }
 

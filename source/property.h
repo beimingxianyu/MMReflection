@@ -88,6 +88,16 @@ class PropertyWrapperBase {
    */
   virtual Variable GetPropertyVariable(const Variable& class_variable) const {return Variable{};}
 
+  protected:
+    template <typename PropertyType>
+    static Variable CreatePropertyVariable(PropertyType& other) {
+      Variable variable{};
+      variable.variable_type_ = Variable::VariableType::SMALL_OBJECT;
+      void* small_object_address = &variable.wrapper_.small_wrapper_;
+      new (small_object_address) PropertyVariableWrapper<PropertyType>{other};
+      return variable;
+    }
+
   private:
     std::string property_name_{};
     std::uint64_t offset_{0};
@@ -188,20 +198,30 @@ class PropertyWrapper
    * in \ref class_variable.
    */
   Variable GetPropertyVariable(Variable& class_variable) override {
-    PropertyType_* property_ptr =reinterpret_cast<PropertyType_*>(static_cast<char*>(class_variable.GetValue()) + PropertyWrapperBase::GetPropertyOffset());
-    return Variable{new PropertyVariableWrapper<PropertyType_>(*property_ptr)};
+    PropertyType_* property_ptr = reinterpret_cast<PropertyType_*>(static_cast<char*>(class_variable.GetValue()) + PropertyWrapperBase::GetPropertyOffset());
+    return PropertyWrapperBase::CreatePropertyVariable<PropertyType_>(*property_ptr);
   }
 
+  /**
+   * \brief Gets the variable that the attribute refers to.
+   * \param class_variable The class variable of this property.
+   * \return A MM::Reflection::Variable that holds the this property contained
+   * in \ref class_variable.
+   */
+  Variable GetPropertyVariable(const Variable& class_variable) const override {
+    const PropertyType_* property_ptr = reinterpret_cast<const PropertyType_*>(static_cast<const char*>(class_variable.GetValue()) + PropertyWrapperBase::GetPropertyOffset());
+    return PropertyWrapperBase::CreatePropertyVariable<const PropertyType_>(*property_ptr);
+  }
 };
 
 template <typename ClassType_, typename PropertyType_>
 class RefrencePropertyWrapper
-    : public CommonPropertyWrapper<ClassType_, PropertyType_> {
+    : public CommonPropertyWrapper<ClassType_, std::add_lvalue_reference_t<PropertyType_>> {
   using ValueType = std::remove_reference_t<PropertyType_>;
 
 public:
   RefrencePropertyWrapper(const std::string& property_name, std::uint64_t offset)
-      : CommonPropertyWrapper<ClassType_, PropertyType_>(property_name, offset,
+      : CommonPropertyWrapper<ClassType_, std::add_lvalue_reference_t<PropertyType_>>(property_name, offset,
                                                          sizeof(void*)) {}
 
 public:
@@ -218,7 +238,7 @@ private:
    */
   Variable GetPropertyVariable(Variable& class_variable) override {
     ValueType* property_ptr = *reinterpret_cast<ValueType**>(static_cast<char*>(class_variable.GetValue()) + PropertyWrapperBase::GetPropertyOffset());
-    return Variable{new PropertyVariableWrapper<ValueType&>(*property_ptr)};
+    return PropertyWrapperBase::CreatePropertyVariable<ValueType&>(*property_ptr);
   }
 
   /**
@@ -229,7 +249,7 @@ private:
    */
   Variable GetPropertyVariable(const Variable& class_variable) const override {
     const ValueType* property_ptr = *reinterpret_cast<const ValueType* const*>(static_cast<const char*>(class_variable.GetValue()) + PropertyWrapperBase::GetPropertyOffset());
-    return Variable{new PropertyVariableWrapper<const ValueType&>(*property_ptr)};
+    return PropertyWrapperBase::CreatePropertyVariable<const ValueType&>(*property_ptr);
   }
 };
 
@@ -237,7 +257,7 @@ template <typename ClassType_, typename PropertyType_>
 class StaticPropertyWrapper
     : public CommonPropertyWrapper<ClassType_, PropertyType_> {
   public:
-    using StaticPropertyType = PropertyType_ *;
+    using StaticPropertyType = std::remove_reference_t<PropertyType_> *;
 
   public:
    StaticPropertyWrapper(const std::string& property_name,
@@ -271,7 +291,7 @@ class StaticPropertyWrapper
    * in \ref class_variable.
    */
   Variable GetPropertyVariable(Variable&) override {
-    return Variable{new PropertyVariableWrapper<PropertyType_>(*static_property_address_)};
+    return PropertyWrapperBase::CreatePropertyVariable<PropertyType_>(*static_property_address_);
   }
 
   /**
@@ -280,62 +300,7 @@ class StaticPropertyWrapper
    * in \ref class_variable.
    */
   Variable GetPropertyVariable(const Variable&) const override {
-    return Variable{new PropertyVariableWrapper<const PropertyType_>(*static_property_address_)};
-  }
-
-  private:
-    StaticPropertyType static_property_address_{nullptr};
-};
-
-template <typename ClassType_, typename PropertyType_>
-class StaticRefrencePropertyWrapper
-    : public CommonPropertyWrapper<ClassType_, PropertyType_> {
-  public:
-    using ValueType = std::remove_reference_t<PropertyType_>;
-    using StaticPropertyType = ValueType*;
-
-  public:
-   StaticRefrencePropertyWrapper(const std::string& property_name,
-                         StaticPropertyType address)
-       : CommonPropertyWrapper<ClassType_, PropertyType_>(property_name, 0,
-                                                          sizeof(void*)),
-         static_property_address_(address) {}
-   ~StaticRefrencePropertyWrapper() override = default;
-
-  public:
-    bool IsValid() const override {
-      return PropertyWrapperBase::IsValid() && static_property_address_ != nullptr;
-    }
-
-    bool IsStatic() const override {
-      return true;
-    }
-
-    const void* GetStaticPropertyAddress() const override {
-      return static_property_address_;
-    }
-
-    void* GetStaticPropertyAddress() override {
-      return static_property_address_;
-    }
-
- private:
-  /**
-   * \brief Gets the variable that the attribute refers to.
-   * \return A MM::Reflection::Variable that holds the this property contained
-   * in \ref class_variable.
-   */
-  Variable GetPropertyVariable(Variable&) override {
-    return Variable{new PropertyVariableWrapper<ValueType&>(*static_property_address_)};
-  }
-
-  /**
-   * \brief Gets the variable that the attribute refers to.
-   * \return A MM::Reflection::Variable that holds the this property contained
-   * in \ref class_variable.
-   */
-  Variable GetPropertyVariable(const Variable&) const override {
-    return Variable{new PropertyVariableWrapper<const ValueType&>(*static_property_address_)};
+    return PropertyWrapperBase::CreatePropertyVariable<const PropertyType_>(*static_property_address_);
   }
 
   private:
@@ -385,7 +350,7 @@ class Property {
 
   template<typename ClassType_, typename PropertyType_>
   static Property CreateStaticRefrenceProperty(const std::string& property_name, std::remove_reference_t<PropertyType_>* static_property_address) {
-    return Property{std::make_unique<StaticRefrencePropertyWrapper<ClassType_, PropertyType_>>(property_name, static_property_address)};
+    return Property{std::make_unique<StaticPropertyWrapper<ClassType_, std::add_lvalue_reference_t<PropertyType_>>>(property_name, static_property_address, sizeof(static_property_address))};
   }
 
  public:

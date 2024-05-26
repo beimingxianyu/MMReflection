@@ -9,7 +9,7 @@ struct alignas(4) SerializerDescriptor {
  std::uint32_t version_{0};
  // Add 1 to the actual type name size
  std::uint32_t c_style_type_name_size_{0};
-  std::uint32_t custom_data_size_{0};
+ std::uint32_t custom_data_size_{0};
  bool is_refrence_{false};
 };
 
