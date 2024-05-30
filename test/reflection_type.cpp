@@ -110,4 +110,25 @@ TEST(reflection, type) {
   EXPECT_EQ(enum_type7.IsEnum(), false);
   EXPECT_EQ(enum_type7.IsPointer(), true);
   // EXPECT_EQ(enum_type7.GetTypeName(), std::string(""));
+
+  const Type* type_name = &Type::CreateType<std::uint32_t>();
+  EXPECT_EQ(type_name->GetTypeName(), "std::uint32_t");
+  type_name = &Type::CreateType<const std::uint32_t>();
+  EXPECT_EQ(type_name->GetTypeName(), "const std::uint32_t");
+  type_name = &Type::CreateType<std::uint32_t*>();
+  EXPECT_EQ(type_name->GetTypeName(), "std::uint32_t*");
+  type_name = &Type::CreateType<const std::uint32_t*>();
+  EXPECT_EQ(type_name->GetTypeName(), "const std::uint32_t*");
+  type_name = &Type::CreateType<const std::uint32_t* const>();
+  EXPECT_EQ(type_name->GetTypeName(), "const std::uint32_t* const");
+  type_name = &Type::CreateType<std::uint32_t&>();
+  EXPECT_EQ(type_name->GetTypeName(), "std::uint32_t&");
+  type_name = &Type::CreateType<const std::uint32_t&>();
+  EXPECT_EQ(type_name->GetTypeName(), "const std::uint32_t&");
+  type_name = &Type::CreateType<unsigned int&&>();
+  EXPECT_EQ(type_name->GetTypeName(), "std::uint32_t&&");
+  type_name = &Type::CreateType<std::uint32_t[3]>();
+  EXPECT_EQ(type_name->GetTypeName(), "std::uint32_t[3]");
+  type_name = &Type::CreateType<const std::uint32_t[3]>();
+  EXPECT_EQ(type_name->GetTypeName(), "const std::uint32_t[3]");
 }

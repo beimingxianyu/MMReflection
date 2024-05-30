@@ -19,8 +19,10 @@ using TypeHashCode = std::uint64_t;
 
 struct TypeID {
   TypeHashCode common_type_hash_code_{0};
-  bool is_const_ : 1;
-  bool is_refrence_ : 1;
+  bool is_top_const_ : 1;
+  bool is_low_const_ : 1;
+  bool is_l_refrence_ : 1;
+  bool is_r_refrence_ : 1;
 
   bool operator==(const TypeID& other) const;
 

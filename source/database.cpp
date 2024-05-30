@@ -40,25 +40,42 @@ MM::Reflection::GetTypeDatabase() {
 
 bool MM::Reflection::TypeID::operator==(const TypeID& other) const {
   return common_type_hash_code_ == other.common_type_hash_code_ &&
-         is_const_ == other.is_const_ && is_refrence_ == other.is_refrence_;
+         is_top_const_ == other.is_top_const_ &&
+         is_l_refrence_ == other.is_l_refrence_ &&
+         is_r_refrence_ == other.is_r_refrence_ &&
+         is_low_const_ == other.is_low_const_;
 }
 
 MM::Reflection::TypeHashCode MM::Reflection::TypeID::GetHashCode() const {
   static TypeHashCode hash_code_change =
       static_cast<TypeHashCode>(0xAAAAAAAAAAAA);
-  constexpr TypeHashCode upper_mask =
-      static_cast<TypeHashCode>(0xFFFFFFFF00000000);
-  constexpr TypeHashCode lower_mask =
-      static_cast<TypeHashCode>(0x00000000FFFFFFFF);
+  constexpr TypeHashCode mask1 =
+      static_cast<TypeHashCode>(0xFFFF000000000000);
+  constexpr TypeHashCode mask2 =
+      static_cast<TypeHashCode>(0x0000FFFF00000000);
+  constexpr TypeHashCode mask3 =
+      static_cast<TypeHashCode>(0x00000000FFFF0000);
+  constexpr TypeHashCode mask4 =
+      static_cast<TypeHashCode>(0x000000000000FFFF);
   TypeHashCode result = common_type_hash_code_;
-  if (is_const_) {
-    TypeHashCode temp = result ^ hash_code_change & lower_mask;
-    result &= upper_mask;
+  if (is_top_const_) {
+    const TypeHashCode temp = result ^ hash_code_change & mask1;
+    result &= ~mask1;
     result |= temp;
   }
-  if (is_refrence_) {
-    TypeHashCode temp = result ^ hash_code_change & upper_mask;
-    result &= lower_mask;
+  if (is_low_const_) {
+    const TypeHashCode temp = result ^ hash_code_change & mask2;
+    result &= ~mask2;
+    result |= temp;
+  }
+  if (is_l_refrence_) {
+    const TypeHashCode temp = result ^ hash_code_change & mask3;
+    result &= ~mask3;
+    result |= temp;
+  }
+  if (is_r_refrence_) {
+    const TypeHashCode temp = result ^ hash_code_change & mask4;
+    result &= ~mask4;
     result |= temp;
   }
 

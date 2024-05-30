@@ -338,20 +338,22 @@ class TypeWrapper final : public TypeWrapperBase {
     std::string result = original_type_name;
     if constexpr (std::is_pointer_v<TypeName>) {
       if constexpr (Utils::IsConstV<std::remove_pointer_t<TypeName>>) {
-        result += " const ";
+        result = std::string("const ") + result;
       }
       result += "*";
       if constexpr (Utils::IsConstV<TypeName>) {
-        result += " const ";
+        result += " const";
       }
     } else if constexpr (std::is_array_v<TypeName>) {
       if (Utils::IsConstV<TypeName>) {
-        result += " const ";
+        result = std::string("const ") + result;
       }
-      result += "[]";
+      result += "[";
+      result += std::to_string(sizeof(TypeName) / sizeof(std::remove_all_extents_t<TypeName>));
+      result += "]";
     } else {
       if constexpr (Utils::IsConstV<std::remove_reference_t<TypeName>>) {
-        result += " const ";
+        result = std::string("const ") + result;
       }
       if constexpr (std::is_lvalue_reference_v<TypeName>) {
         result += "&";
@@ -527,7 +529,12 @@ class Type {
  public:
   template <typename TypeName>
   static const Type& CreateType() {
-    TypeID type_id{typeid(TypeName).hash_code(), Utils::IsConstV<TypeName>, std::is_reference_v<TypeName>};
+    constexpr bool is_top_const = std::is_const_v<TypeName>;
+    constexpr bool is_low_const = (std::is_pointer_v<TypeName> ? std::is_const_v<std::remove_pointer_t<TypeName>> : false) ||
+                                  (std::is_reference_v<TypeName> ? std::is_const_v<std::remove_reference_t<TypeName>> : false);
+    constexpr bool is_l_reference = std::is_lvalue_reference_v<TypeName>;
+    constexpr bool is_r_reference = std::is_rvalue_reference_v<TypeName>;
+    TypeID type_id{typeid(TypeName).hash_code(), is_top_const, is_low_const, is_l_reference, is_r_reference};
     auto& type_database = GetTypeDatabase();
     std::unordered_map<TypeID, const Type*>::iterator find_result = type_database.find(type_id);
     if (find_result == type_database.end()) {
