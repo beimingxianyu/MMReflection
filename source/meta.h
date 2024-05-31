@@ -4,26 +4,28 @@
 #include <unordered_map>
 #include <vector>
 
+#include "constructor.h"
+#include "enum.h"
 #include "method.h"
 #include "property.h"
-#include "constructor.h"
-#include "serializer.h"
 
 namespace MM {
 namespace Reflection {
 class Meta {
 template <typename ClassType_> friend class Class;
+template <typename EnumType_, EnumValue DefaultValue> friend class Enum;
 
 public:
   Meta() = delete;
   ~Meta() = default;
-  explicit Meta(const std::string& type_name, const Type& type,
-                std::unordered_map<std::string, Constructor>&& constructors =
-                    std::unordered_map<std::string, Constructor>{},
-                std::unordered_map<std::string, Method>&& methods =
-                    std::unordered_map<std::string, Method>{},
-                std::unordered_map<std::string, Property>&& properties =
-                    std::unordered_map<std::string, Property>{});
+  Meta(const std::string& type_name, const Type& type,
+       std::unordered_map<std::string, Constructor>&& constructors =
+           std::unordered_map<std::string, Constructor>{},
+       std::unordered_map<std::string, Method>&& methods =
+           std::unordered_map<std::string, Method>{},
+       std::unordered_map<std::string, Property>&& properties =
+           std::unordered_map<std::string, Property>{});
+  Meta(const std::string& type_name, const Type& type, std::unordered_map<std::string, EnumPair>&& enums);
   Meta(const Meta& other) = delete;
   Meta(Meta&& other) noexcept;
   Meta& operator=(const Meta& other) = delete;
@@ -63,6 +65,12 @@ public:
  std::vector<const Constructor*> GetAllConstructor() const;
 
  /**
+  * \brief Get all \ref MM::Reflection::EnumPair of this meta.
+  * \return All \ref MM::Reflection::EnumPair of this meta.
+  */
+ std::vector<const EnumPair*> GetAllEnums() const;
+
+ /**
   * \brief Determine whether the method specified by \ref method_name exists.
   * \param method_name The method name;
   * \return If the specified method exists, return true; otherwise, return
@@ -90,6 +98,8 @@ public:
   */
  bool HaveProperty(const std::string& property_name) const;
 
+ bool HaveEnum(const std::string& enum_name) const;
+
  /**
   * \brief Get \ref MM::Reflection::Property with a name.
   * \param property_name The name of property name.
@@ -102,6 +112,10 @@ public:
   * \return All \ref MM::Reflection::Property of this meta.
   */
  std::vector<const Property*> GetAllProperty() const;
+
+ const EnumPair* GetEnum(const std::string& enum_name) const;
+
+ const EnumPair* GetEnum(EnumValue enum_value) const;
 
  /**
   * \brief Add new constructor.
@@ -138,6 +152,14 @@ public:
  bool AddProperty(Property&& property);
 
  void RemoveProperty(const std::string& property_name);
+
+ bool AddEnum(EnumPair&& enum_pair);
+
+ static const std::string& GetEnumConstructName();
+
+ EnumItem CreateEnum(const std::string& enum_name) const;
+
+ Variable CreateEnumVariable(const std::string& enum_name) const;
 
  /**
   * \brief Create instance with 0 arguments.
@@ -317,27 +339,31 @@ public:
  bool HaveSerializer() const;
 
 private:
-  std::string type_name_{};
+ std::string type_name_{};
 
-  /**
-   * \brief The \ref MM::Reflection::Type of this object.
-   */
-  const Type* type_;
+ /**
+  * \brief The \ref MM::Reflection::Type of this object.
+  */
+ const Type* type_;
 
-  /**
-   * \brief Constructor map.
-   */
-  std::unordered_map<std::string, Constructor> constructors_;
+ /**
+  * \brief Constructor map.
+  */
+ std::unordered_map<std::string, Constructor> constructors_;
 
-  /**
-   * \brief Method map.
-   */
-  std::unordered_map<std::string, Method> methods_;
+ /**
+  * \brief Method map.
+  */
+ std::unordered_map<std::string, Method> methods_;
 
-  /**
-   * \brief Property map.
-   */
-  std::unordered_map<std::string, Property> properties_;
+ /**
+  * \brief Property map.
+  */
+ std::unordered_map<std::string, Property> properties_;
+
+ std::unordered_map<std::string, EnumPair> enums_;
+
+ std::unordered_map<EnumValue, std::string> enum_value_to_name_;
 
  mutable Variable empty_variable_{};
 
@@ -345,7 +371,7 @@ private:
 
  mutable Variable empty_variable_const_refrence_{};
 
-  std::string serializer_name_{};
+ std::string serializer_name_{};
 };
 }
 }

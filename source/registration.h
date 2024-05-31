@@ -44,7 +44,7 @@ template <typename ClassType_>
 class Class {
 public:
   Class() = delete;
-  ~Class() {
+  virtual ~Class() {
     Register();
   }
   Class(const Class& other) = delete;
@@ -83,13 +83,19 @@ public:
     using PropertyMeta = Utils::PropertyMetaData<PropertySignature>;
     if constexpr (PropertyMeta::IsStatic) {
       const bool add_result = meta_.AddProperty(Property::CreateStaticProperty<ClassType_, typename PropertyMeta::PropertyType>(property_name, property_ptr, sizeof(typename PropertyMeta::PropertyType)));
-      assert(add_result);
+      if (!add_result) {
+        std::cerr << "[Error] [MMReflecion] Class " << meta_.GetTypeName() << " registers property " << property_name << " repeatedly.";
+        abort();
+      }
     } else {
       static_assert(std::is_same_v<typename PropertyMeta::ClassType, ClassType_>, "This property does not belong to this class.");
       const intptr_t property_offset = (intptr_t)(&((ClassType_*)(nullptr)->*property_ptr));
       const bool add_result = meta_.AddProperty(Property::CreateProperty<typename PropertyMeta::ClassType,
                                    typename PropertyMeta::PropertyType>(property_name, property_offset, sizeof(typename PropertyMeta::PropertyType)));
-      assert(add_result);
+      if (!add_result) {
+        std::cerr << "[Error] [MMReflecion] Class " << meta_.GetTypeName() << " registers property " << property_name << " repeatedly.";
+        abort();
+      }
     }
 
     return *this;
@@ -98,7 +104,10 @@ public:
   template<typename PropertyType>
   Class& Property(const std::string& property_name, RefrencePropertyDescriptor<PropertyType> descriptor ) {
     const bool add_result = meta_.AddProperty(Property::CreateRefrenceProperty<ClassType_, PropertyType>(property_name, descriptor.offset_));
-    assert(add_result);
+    if (!add_result) {
+      std::cerr << "[Error] [MMReflecion] Class " << meta_.GetTypeName() << " registers property " << property_name << " repeatedly.";
+      abort();
+    }
 
     return *this;
   }
@@ -106,7 +115,10 @@ public:
   template<typename PropertyType>
   Class& Property(const std::string& property_name, StaticRefrencePropertyDescriptor<PropertyType> descriptor ) {
     const bool add_result = meta_.AddProperty(Property::CreateStaticRefrenceProperty<ClassType_, PropertyType>(property_name, descriptor.address_));
-    assert(add_result);
+    if (!add_result) {
+      std::cerr << "[Error] [MMReflecion] Class " << meta_.GetTypeName() << " registers property " << property_name << " repeatedly.";
+      abort();
+    }
 
     return *this;
   }
@@ -118,7 +130,10 @@ public:
             constructor_name,
             &ConstructorFunction<ClassType_, Args...>,
             &PlacementConstructorFunction<ClassType_, Args...>));
-    assert(add_result);
+    if (!add_result) {
+      std::cerr << "[Error] [MMReflecion] Class " << meta_.GetTypeName() << " registers constructor " << constructor_name << " repeatedly.";
+      abort();
+    }
 
     return *this;
   }
@@ -129,7 +144,7 @@ public:
     return *this;
   }
 
-private:
+protected:
   static void SetEmptyObject(Meta& meta) {
       if constexpr (!std::is_same_v<ClassType_, void>) {
         if (!meta.empty_variable_.IsValid()) {
@@ -147,7 +162,6 @@ private:
             meta.empty_variable_refrence_ = Variable::CreateVariable<ClassType_&>(meta.empty_variable_.GetValueCast<ClassType_>());
             meta.empty_variable_const_refrence_ = Variable::CreateVariable<const ClassType_&>(meta.empty_variable_.GetValueCast<ClassType_>());
           }
-
         }
       }
   }
@@ -187,10 +201,6 @@ private:
         }
       }
 
-      if (meta_.serializer_name_ != old_meta->serializer_name_) {
-        old_meta->serializer_name_ = meta_.serializer_name_;
-      }
-
       SetEmptyObject(*old_meta);
       if (old_meta->GetSerializerName() != serializer_name_) {
         old_meta->SetSerializerName(serializer_name_);
@@ -205,7 +215,8 @@ private:
 
     auto name_to_hash_emplace_result = name_to_type_database.emplace(std::pair{meta_.GetTypeName(), meta_.GetType().GetTypeHashCode()});
     assert(name_to_hash_emplace_result.second);
-    auto meta_data_emplace_result = meta_database.emplace(std::pair{meta_.GetType().GetTypeHashCode(), new Meta{std::move(meta_)}});
+    auto type_hash_code = meta_.GetType().GetTypeHashCode();
+    auto meta_data_emplace_result = meta_database.emplace(std::pair{type_hash_code, new Meta{std::move(meta_)}});
     assert(meta_data_emplace_result.second);
   }
 
@@ -237,10 +248,68 @@ private:
     assert(add_result);
   }
 
-private:
+public:
   Meta meta_;
 
   std::string serializer_name_;
+};
+
+template <typename EnumType, EnumValue DefaultValue = 0>
+class Enum : private Class<EnumType> {
+public:
+  Enum() = delete;
+  ~Enum() override {
+    Register();
+  }
+  explicit Enum(const std::string& type_name)
+    : Class<EnumType>(type_name) {
+    static_assert((std::is_enum_v<EnumType>) && (std::is_same_v<EnumType, Utils::GetOriginalTypeT<EnumType>>), "");
+  }
+  Enum(const Enum& other) = delete;
+  Enum(Enum&& other) noexcept = delete;
+  Enum& operator=(const Enum& other) = delete;
+  Enum& operator=(Enum& other) noexcept = delete;
+
+public:
+  Enum& Add(const std::string& enum_name, EnumType value) {
+    const bool add_result = Class<EnumType>::meta_.AddEnum(EnumPair{enum_name, static_cast<EnumValue>(value)});
+    if (!add_result) {
+      std::cerr << "[Error] [MMReflecion] Enum " << Class<EnumType>::meta_.GetTypeName() << " registers enum " << enum_name << " repeatedly.";
+      abort();
+    }
+
+    return *this;
+  }
+
+  Enum& SetSerializerName(const std::string& serializer_name) {
+    Class<EnumType>::serializer_name_ = serializer_name;
+
+    return *this;
+  }
+
+private:
+  static EnumType GetEmptyObject() {
+    return static_cast<EnumType>(DefaultValue);
+  }
+
+  static EnumType ConstructorFunction(EnumValue value) {
+    return EnumType{static_cast<EnumType>(value)};
+  }
+
+  static void PlacementConstructorFunction(void* address, EnumValue value) {
+    new (address) EnumType{static_cast<EnumType>(value)};
+  }
+
+  void Register() {
+    if (Class<EnumType>::meta_.enums_.empty()) {
+      std::cerr << "[Error] [MMReflection] Enum " << Class<EnumType>::meta_.GetTypeName() << "does not contain any enumeration.";
+      abort();
+    }
+
+    Constructor constructor = Constructor::CreateConstructor<EnumType, EnumValue>(Meta::GetEnumConstructName(), ConstructorFunction, PlacementConstructorFunction);
+    Class<EnumType>::meta_.AddConstructor(std::move(constructor));
+    Class<EnumType>::Method(Class<EnumType>::meta_.GetEmptyObjectMethodName(), &GetEmptyObject);
+  }
 };
 
 template<typename SerializerType>

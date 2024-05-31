@@ -1,5 +1,9 @@
 #include "meta.h"
 
+#include <set>
+
+#include "serializer.h"
+
 MM::Reflection::Meta::Meta(
     const std::string& type_name, const Type& type,
     std::unordered_map<std::string, Constructor>&& constructors,
@@ -11,13 +15,31 @@ MM::Reflection::Meta::Meta(
       methods_(std::move(methods)),
       properties_(std::move(properties)) {}
 
+MM::Reflection::Meta::Meta(const std::string& type_name, const Type& type,
+                           std::unordered_map<std::string, EnumPair>&& enums)
+      : type_name_(type_name),
+        type_(&type),
+        enums_(std::move(enums)) {
+  assert(type_->IsEnum());
+  std::set<EnumValue> values{};
+  for (const auto& one_enum: enums_) {
+    assert(values.count(one_enum.second.value_) == 0);
+    values.insert(one_enum.second.value_);
+  }
+  for (const auto& one_enum: enums_) {
+    enum_value_to_name_.emplace(one_enum.second.value_, one_enum.first);
+  }
+}
+
 MM::Reflection::Meta::Meta(Meta&& other) noexcept
     : type_name_(std::move(other.type_name_)),
       type_(std::move(other.type_)),
       constructors_(std::move(other.constructors_)),
       methods_(std::move(other.methods_)),
       properties_(std::move(other.properties_)),
-      serializer_name_(std::move(other.serializer_name_)){
+      serializer_name_(std::move(other.serializer_name_)),
+      enums_(std::move(other.enums_)),
+      enum_value_to_name_(std::move(other.enum_value_to_name_)) {
   empty_variable_ = std::move(other.empty_variable_);
   empty_variable_refrence_ = std::move(other.empty_variable_refrence_);
   empty_variable_const_refrence_ =
@@ -53,15 +75,28 @@ const MM::Reflection::Constructor* MM::Reflection::Meta::GetConstructor(
   return nullptr;
 }
 
-std::vector<const MM::Reflection::Constructor*> MM::Reflection::Meta::GetAllConstructor() const {
+std::vector<const MM::Reflection::Constructor*>
+MM::Reflection::Meta::GetAllConstructor() const {
   if (constructors_.empty()) {
     return std::vector<const Constructor*>{};
   }
 
   std::vector<const Constructor*> result{};
   result.reserve(constructors_.size());
-  for (const std::pair<const std::string, Constructor>& one_method : constructors_) {
+  for (const std::pair<const std::string, Constructor>& one_method :
+       constructors_) {
     result.push_back(&(one_method.second));
+  }
+
+  return result;
+}
+
+std::vector<const MM::Reflection::EnumPair*>
+MM::Reflection::Meta::GetAllEnums() const {
+  std::vector<const EnumPair*> result{};
+  result.reserve(enums_.size());
+  for (const auto& one_enum: enums_) {
+    result.push_back(&(one_enum.second));
   }
 
   return result;
@@ -100,6 +135,10 @@ bool MM::Reflection::Meta::HaveProperty(
   return properties_.find(property_name) != properties_.end();
 }
 
+bool MM::Reflection::Meta::HaveEnum(const std::string& enum_name) const {
+  return enums_.count(enum_name) != 0;
+}
+
 const MM::Reflection::Property* MM::Reflection::Meta::GetProperty(
     const std::string& property_name) const {
   if (const auto& find_result = properties_.find(property_name);
@@ -110,7 +149,8 @@ const MM::Reflection::Property* MM::Reflection::Meta::GetProperty(
   return nullptr;
 }
 
-std::vector<const MM::Reflection::Property*> MM::Reflection::Meta::GetAllProperty() const {
+std::vector<const MM::Reflection::Property*>
+MM::Reflection::Meta::GetAllProperty() const {
   if (properties_.empty()) {
     return std::vector<const Property*>{};
   }
@@ -123,6 +163,26 @@ std::vector<const MM::Reflection::Property*> MM::Reflection::Meta::GetAllPropert
   }
 
   return result;
+}
+
+const MM::Reflection::EnumPair* MM::Reflection::Meta::GetEnum(
+    const std::string& enum_name) const {
+  const auto result = enums_.find(enum_name);
+  if (result != enums_.end()) {
+    return &(result->second);
+  } else {
+    return nullptr;
+  }
+}
+
+const MM::Reflection::EnumPair* MM::Reflection::Meta::GetEnum(
+    EnumValue enum_value) const {
+  const auto result = enum_value_to_name_.find(enum_value);
+  if (result != enum_value_to_name_.end()) {
+    return GetEnum(result->second);
+  } else {
+    return nullptr;
+  }
 }
 
 bool MM::Reflection::Meta::AddConstructor(Constructor&& constuctor) {
@@ -170,6 +230,43 @@ bool MM::Reflection::Meta::AddProperty(Property&& property) {
 
 void MM::Reflection::Meta::RemoveProperty(const std::string& property_name) {
   properties_.erase(property_name);
+}
+
+bool MM::Reflection::Meta::AddEnum(EnumPair&& enum_pair) {
+  if (HaveEnum(enum_pair.enum_name_)) {
+    return false;
+  }
+
+  enums_.emplace(enum_pair.enum_name_, enum_pair);
+
+  return true;
+}
+
+const std::string& MM::Reflection::Meta::GetEnumConstructName() {
+  static std::string enum_construct_name{"Default"};
+
+  return enum_construct_name;
+}
+
+MM::Reflection::EnumItem MM::Reflection::Meta::CreateEnum(
+    const std::string& enum_name) const {
+  const auto result = enums_.find(enum_name);
+  if (result != enums_.end()) {
+    return EnumItem{this, &(result->second)};
+  } else {
+    return EnumItem{};
+  }
+}
+
+MM::Reflection::Variable MM::Reflection::Meta::CreateEnumVariable(
+    const std::string& enum_name) const {
+  const EnumPair* pair = GetEnum(enum_name);
+  if (pair == nullptr) {
+    return Variable{};
+  }
+
+  Variable enum_value_variable = Variable::CreateVariable(pair->value_, true);
+  return CreateInstance(GetEnumConstructName(), enum_value_variable);
 }
 
 bool MM::Reflection::Meta::SetSerializerName(
