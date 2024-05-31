@@ -4,6 +4,7 @@
 #include "database.h"
 
 #include "meta.h"
+#include "serializer.h"
 
 const std::string& MM::Reflection::GetEmptyString() {
   static std::string empty_string{};

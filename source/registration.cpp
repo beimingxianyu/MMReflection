@@ -1,5 +1,7 @@
 #include "registration.h"
 
+#include "serializer.h"
+
 namespace MM {
 namespace Reflection {
 char GetEmptyCharObject() {
