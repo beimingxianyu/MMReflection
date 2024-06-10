@@ -179,7 +179,7 @@ protected:
       }
 
       auto meta_find_result = meta_database.find(find_result->second);
-      assert(meta_find_result != nullptr);
+      assert(meta_find_result != meta_database.end());
       Meta* old_meta = meta_find_result->second;
 
       auto& old_meta_constructors = old_meta->constructors_;
@@ -259,7 +259,7 @@ class Enum : private Class<EnumType> {
 public:
   Enum() = delete;
   ~Enum() override {
-    Register();
+    EnumRegister();
   }
   explicit Enum(const std::string& type_name)
     : Class<EnumType>(type_name) {
@@ -300,13 +300,13 @@ private:
     new (address) EnumType{static_cast<EnumType>(value)};
   }
 
-  void Register() {
+  void EnumRegister() {
     if (Class<EnumType>::meta_.enums_.empty()) {
       std::cerr << "[Error] [MMReflection] Enum " << Class<EnumType>::meta_.GetTypeName() << "does not contain any enumeration.";
       abort();
     }
 
-    Constructor constructor = Constructor::CreateConstructor<EnumType, EnumValue>(Meta::GetEnumConstructName(), ConstructorFunction, PlacementConstructorFunction);
+    ::MM::Reflection::Constructor constructor = ::MM::Reflection::Constructor::CreateConstructor<EnumType, EnumValue>(Meta::GetEnumConstructName(), ConstructorFunction, PlacementConstructorFunction);
     Class<EnumType>::meta_.AddConstructor(std::move(constructor));
     Class<EnumType>::Method(Class<EnumType>::meta_.GetEmptyObjectMethodName(), &GetEmptyObject);
   }

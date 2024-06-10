@@ -1,5 +1,6 @@
 #include "serializer.h"
 
+#include <cstring>
 #include <iostream>
 
 const std::string& MM::Reflection::SerializerBase::GetSerializerName() const {
@@ -19,7 +20,8 @@ void MM::Reflection::SerializerBase::WriteDescriptor(
   bool is_refrence = variable.IsPropertyVariable()
                          ? (variable.GetPropertyRealType()->IsReference() ||
                             variable.GetPropertyRealType()->IsPointer())
-                         : variable.IsRefrenceVariable();
+                         : (variable.GetType()->IsReference() ||
+                            variable.GetType()->IsPointer());
 
   const SerializerDescriptor descriptor{
       GetVersion(),
@@ -267,7 +269,7 @@ MM::Reflection::DataBuffer& MM::Reflection::UnsefeRecursionSerializer::Serialize
     assert(property_variable.GetMeta()->HaveSerializer());
     auto serializer_iter = serializer_database.find(
         property_variable.GetMeta()->GetSerializerName());
-    assert(serializer_iter != nullptr);
+    assert(serializer_iter != serializer_database.end());
     const SerializerBase* serializer = serializer_iter->second;
     if (property_variable.GetPropertyRealType()->IsPointer()) {
       Variable new_refrence_variable = property_variable.PointerVariableToRefrenceVariable(true);
@@ -320,14 +322,14 @@ void MM::Reflection::UnsefeRecursionSerializer::ReadAllPropertyData(
     const std::string type_name = ReadTypeName(
         data_buffer, serializer_descriptor.c_style_type_name_size_);
     auto type_hash_code_iter = GetNameToTypeHashDatabase().find(type_name);
-    assert(type_hash_code_iter != nullptr);
+    assert(type_hash_code_iter != GetNameToTypeHashDatabase().end());
     auto meta_iter = GetMetaDatabase().find(type_hash_code_iter->second);
-    assert(meta_iter != nullptr);
+    assert(meta_iter != GetMetaDatabase().end());
     const Meta* property_meta = meta_iter->second;
     assert(property_meta->HaveSerializer());
     auto serializer_iter =
         GetSerializerDatabase().find(property_meta->GetSerializerName());
-    assert(serializer_iter != nullptr);
+    assert(serializer_iter != GetSerializerDatabase().end());
     const SerializerBase* serializer = serializer_iter->second;
 
     assert(serializer_descriptor.is_refrence_ ==
@@ -385,7 +387,7 @@ MM::Reflection::DataBuffer& MM::Reflection::Serialize(DataBuffer& data_buffer,
 
   const auto serializer_iter =
       GetSerializerDatabase().find(meta->GetSerializerName());
-  assert(serializer_iter != nullptr);
+  assert(serializer_iter != GetSerializerDatabase().end());
   const SerializerBase* serializer = serializer_iter->second;
   return serializer->Serialize(data_buffer, variable);
 }
@@ -397,14 +399,14 @@ MM::Reflection::Variable MM::Reflection::Deserialize(
   const std::string type_name = SerializerBase::ReadTypeName(
       data_buffer, serializer_descriptor.c_style_type_name_size_);
   auto type_hash_code_iter = GetNameToTypeHashDatabase().find(type_name);
-  assert(type_hash_code_iter != nullptr);
+  assert(type_hash_code_iter != GetNameToTypeHashDatabase().end());
   auto meta_iter = GetMetaDatabase().find(type_hash_code_iter->second);
-  assert(meta_iter != nullptr);
+  assert(meta_iter != GetMetaDatabase().end());
   const Meta* meta = meta_iter->second;
   assert(meta->HaveSerializer());
   auto serializer_iter =
       GetSerializerDatabase().find(meta->GetSerializerName());
-  assert(serializer_iter != nullptr);
+  assert(serializer_iter != GetSerializerDatabase().end());
   const SerializerBase* serializer = serializer_iter->second;
 
   DeserializerInfo deserializer_info{nullptr,

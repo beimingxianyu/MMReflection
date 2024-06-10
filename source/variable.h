@@ -583,9 +583,19 @@ class PropertyVariableWrapper : public VariableRefrenceWrapper<PropertyType_> {
   bool IsPropertyVariable() const override { return true; }
 
   const Type* GetPropertyRealType() const override {
-    const MM::Reflection::Type& Result =
+    const MM::Reflection::Type& result =
         MM::Reflection::Type::CreateType<PropertyType_>();
-    return &Result;
+    return &result;
+  }
+
+  VariableWrapperBase* CopyToBasePointer(
+      void* placement_address) const override {
+    if (placement_address != nullptr) {
+      return new (placement_address)
+          PropertyVariableWrapper(VariableRefrenceWrapper<PropertyType_>::value_);
+    } else {
+      return new PropertyVariableWrapper(VariableRefrenceWrapper<PropertyType_>::value_);
+    }
   }
 };
 

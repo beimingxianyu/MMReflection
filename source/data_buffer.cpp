@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <cstring>
 
 MM::Reflection::DataBuffer::~DataBuffer() { Release(); }
 

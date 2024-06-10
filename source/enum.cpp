@@ -25,7 +25,7 @@ MM::Reflection::EnumValue MM::Reflection::EnumItem::GetValue() const {
 
 std::uint8_t MM::Reflection::EnumItem::GetSize() const {
   assert(IsValid());
-  return meta_->GetType().GetSize();
+  return static_cast<std::uint8_t>(meta_->GetType().GetSize());
 }
 
 const std::string& MM::Reflection::EnumItem::GetEnumName() const {

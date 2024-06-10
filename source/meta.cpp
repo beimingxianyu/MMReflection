@@ -273,7 +273,7 @@ bool MM::Reflection::Meta::SetSerializerName(
     const std::string& serializer_name) {
   const std::unordered_map<std::string, SerializerBase*>& data_base = GetSerializerDatabase();
   const auto find_rseult = data_base.find(serializer_name);
-  if (find_rseult == nullptr) {
+  if (find_rseult == data_base.end()) {
     return false;
   }
   if (!find_rseult->second->Check(*this)) {

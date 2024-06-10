@@ -1,10 +1,8 @@
 #pragma once
 
-#include <cstring>
-#include <memory>
 #include <cassert>
 #include <cstdint>
-
+#include <string>
 
 namespace MM {
 namespace Reflection {
